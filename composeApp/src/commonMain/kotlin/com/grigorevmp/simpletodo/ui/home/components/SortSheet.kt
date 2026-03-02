@@ -1,11 +1,15 @@
 package com.grigorevmp.simpletodo.ui.home.components
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
@@ -24,7 +28,9 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.grigorevmp.simpletodo.model.SortConfig
 import com.grigorevmp.simpletodo.model.SortDir
@@ -101,11 +107,13 @@ fun SortSheet(
                 shape = RoundedCornerShape(16.dp),
                 color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.55f)
             ) {
-                Row(
-                    Modifier.fillMaxWidth().padding(14.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                Box(Modifier.fillMaxWidth().padding(14.dp)) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(end = 64.dp),
+                        verticalArrangement = Arrangement.spacedBy(2.dp)
+                    ) {
                         Text(stringResource(Res.string.sort_show_completed_title), style = MaterialTheme.typography.titleMedium)
                         Text(
                             stringResource(Res.string.sort_show_completed_desc),
@@ -114,13 +122,20 @@ fun SortSheet(
                         )
                     }
                     Switch(
+                        modifier = Modifier.align(Alignment.CenterEnd),
                         checked = showCompleted,
                         onCheckedChange = onShowCompleted
                     )
                 }
             }
 
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(IntrinsicSize.Min),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
                 Button(
                     onClick = {
                         val def = SortConfig()
@@ -131,15 +146,33 @@ fun SortSheet(
                         onApply(def)
                         onDismiss()
                     },
-                    modifier = Modifier.weight(1f)
-                ) { Text(stringResource(Res.string.sort_reset_default)) }
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxHeight()
+                        .heightIn(min = 52.dp)
+                ) {
+                    Text(
+                        text = stringResource(Res.string.sort_reset_default),
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
                 Button(
                     onClick = {
                         onApply(SortConfig(primary, primaryDir, secondary, secondaryDir))
                         onDismiss()
                     },
-                    modifier = Modifier.weight(1f)
-                ) { Text(stringResource(Res.string.sort_apply)) }
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxHeight()
+                        .heightIn(min = 52.dp)
+                ) {
+                    Text(
+                        text = stringResource(Res.string.sort_apply),
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
             }
 
             Spacer(Modifier.height(18.dp))

@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -55,7 +56,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
-import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.grigorevmp.simpletodo.data.TodoRepository
 import com.grigorevmp.simpletodo.model.Importance
@@ -66,12 +67,13 @@ import com.grigorevmp.simpletodo.model.Subtask
 import com.grigorevmp.simpletodo.model.Tag
 import com.grigorevmp.simpletodo.model.TodoTask
 import com.grigorevmp.simpletodo.platform.PlatformDateTimePicker
+import com.grigorevmp.simpletodo.platform.isIos
 import com.grigorevmp.simpletodo.ui.components.AddIcon
 import com.grigorevmp.simpletodo.ui.components.CircleCheckbox
-import com.grigorevmp.simpletodo.ui.components.CloseIcon
-import com.grigorevmp.simpletodo.ui.components.DeleteIcon
 import com.grigorevmp.simpletodo.ui.components.FadingScrollEdges
 import com.grigorevmp.simpletodo.ui.components.NoOverscroll
+import com.grigorevmp.simpletodo.ui.components.PlatformDeleteIcon
+import com.grigorevmp.simpletodo.ui.components.SimpleIcons
 import com.grigorevmp.simpletodo.util.newId
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.stringResource
@@ -85,7 +87,6 @@ import simpletodo.composeapp.generated.resources.search_placeholder
 import simpletodo.composeapp.generated.resources.task_add_cd
 import simpletodo.composeapp.generated.resources.task_add_subtask
 import simpletodo.composeapp.generated.resources.task_close
-import simpletodo.composeapp.generated.resources.task_close_cd
 import simpletodo.composeapp.generated.resources.task_create
 import simpletodo.composeapp.generated.resources.task_deadline_label
 import simpletodo.composeapp.generated.resources.task_editor_edit
@@ -149,6 +150,13 @@ fun TaskEditorSheet(
     val scrollState = rememberScrollState()
     val defaultSubtaskLabel = stringResource(Res.string.task_subtask_default)
     val newSubtaskLabel = stringResource(Res.string.task_new_subtask_default)
+    val headerTitle = if (initial == null) {
+        stringResource(Res.string.task_editor_new)
+    } else {
+        stringResource(Res.string.task_editor_edit)
+    }
+    val iconButtonSize = if (isIos) 44.dp else 48.dp
+    val iconSize = if (isIos) 26.dp else 24.dp
     val projectStatuses = remember(projectId, projects) {
         projects.firstOrNull { it.id == projectId }?.statuses.orEmpty()
     }
@@ -175,20 +183,27 @@ fun TaskEditorSheet(
                         ) {
                             Row(
                                 Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween
+                                verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Text(
-                                    if (initial == null) stringResource(Res.string.task_editor_new) else stringResource(Res.string.task_editor_edit),
-                                    style = MaterialTheme.typography.titleLarge,
-                                    modifier = Modifier.align(Alignment.CenterVertically),
-                                    textAlign = TextAlign.Center
-                                )
                                 IconButton(
                                     onClick = onDismiss,
-                                    modifier = Modifier.align(Alignment.CenterVertically)
+                                    modifier = Modifier.size(iconButtonSize)
                                 ) {
-                                    Icon(CloseIcon, contentDescription = stringResource(Res.string.task_close_cd))
+                                    Icon(
+                                        imageVector = SimpleIcons.ArrowLeft,
+                                        contentDescription = stringResource(Res.string.task_close),
+                                        modifier = Modifier.size(iconSize)
+                                    )
                                 }
+                                Text(
+                                    headerTitle,
+                                    style = MaterialTheme.typography.titleLarge,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .padding(start = 2.dp)
+                                )
                             }
 
                             OutlinedTextField(
@@ -329,9 +344,9 @@ fun TaskEditorSheet(
                                                             subtasks.filterNot { it.id == s.id }
                                                     }, enabled = subtasks.isNotEmpty()
                                                 ) {
-                                                    Icon(
-                                                        DeleteIcon,
-                                                        contentDescription = stringResource(Res.string.task_remove_subtask_cd)
+                                                    PlatformDeleteIcon(
+                                                        contentDescription = stringResource(Res.string.task_remove_subtask_cd),
+                                                        tint = MaterialTheme.colorScheme.onSurfaceVariant
                                                     )
                                                 }
                                             }

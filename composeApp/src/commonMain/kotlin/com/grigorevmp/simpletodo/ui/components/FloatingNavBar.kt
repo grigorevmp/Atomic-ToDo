@@ -5,8 +5,12 @@ import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.expandHorizontally
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
+import androidx.compose.animation.shrinkHorizontally
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -67,6 +71,7 @@ fun FloatingNavBar(
     enableEffects: Boolean = true,
     modifier: Modifier = Modifier
 ) {
+    val primaryAction = createActions.firstOrNull()
     val shape = RoundedCornerShape(48.dp)
     val glassColor = MaterialTheme.colorScheme.surfaceVariant
     val glassBrush = Brush.verticalGradient(
@@ -194,23 +199,26 @@ fun FloatingNavBar(
                     onClick = { onTab(AppTab.SETTINGS) },
                     iconSize = 24.dp,
                     icon = {
-                        Icon(
-                            SettingsIcon,
+                        PlatformIcon(
+                            id = AppIconId.Settings,
                             contentDescription = stringResource(Res.string.nav_settings),
                             tint = if (tab == AppTab.SETTINGS) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier
+                            modifier = Modifier.size(24.dp)
                         )
                     }
                 )
 
-                createActions.take(1).forEach { action ->
-                    AnimatedVisibility(
-                        visible = createActions.isNotEmpty(),
-                        enter = scaleIn(animationSpec = tween(durationMillis = 200)),
-                        exit = scaleOut(animationSpec = tween(durationMillis = 200)),
-                    ) {
-                        CreateActionButton(action = action)
-                    }
+                AnimatedVisibility(
+                    visible = primaryAction != null,
+                    enter = expandHorizontally(animationSpec = tween(durationMillis = 220)) +
+                        fadeIn(animationSpec = tween(durationMillis = 180)) +
+                        scaleIn(initialScale = 0.86f, animationSpec = tween(durationMillis = 220)),
+                    exit = shrinkHorizontally(animationSpec = tween(durationMillis = 180)) +
+                        fadeOut(animationSpec = tween(durationMillis = 120)) +
+                        scaleOut(targetScale = 0.86f, animationSpec = tween(durationMillis = 180))
+                ) {
+                    val action = primaryAction ?: return@AnimatedVisibility
+                    CreateActionButton(action = action)
                 }
             }
         }

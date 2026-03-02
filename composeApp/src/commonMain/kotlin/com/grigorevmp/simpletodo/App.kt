@@ -146,6 +146,7 @@ fun App() {
         val createNoteSignal = remember { androidx.compose.runtime.mutableIntStateOf(0) }
         val createProjectSignal = remember { androidx.compose.runtime.mutableIntStateOf(0) }
         var notesEditorVisible by remember { androidx.compose.runtime.mutableStateOf(false) }
+        var projectsEditorVisible by remember { androidx.compose.runtime.mutableStateOf(false) }
         val openNoteId = remember { androidx.compose.runtime.mutableStateOf<String?>(null) }
         val backgroundColor = MaterialTheme.colorScheme.background
         val backdrop = rememberLayerBackdrop {
@@ -156,6 +157,57 @@ fun App() {
         Scaffold(
             containerColor = MaterialTheme.colorScheme.background
         ) { pad ->
+            val activeCreateActions = when (tab) {
+                AppTab.HOME -> listOf(
+                    CreateAction(
+                        id = "new_task",
+                        label = stringResource(Res.string.action_new),
+                        contentDescription = "Create task",
+                        icon = AddIcon,
+                        onClick = {
+                            if (isIos) {
+                                iosRoute.value = "home"
+                            } else if (currentRoute != "home") {
+                                navController.navigate("home") { launchSingleTop = true }
+                            }
+                            createTaskSignal.intValue += 1
+                        }
+                    )
+                )
+                AppTab.NOTES -> listOf(
+                    CreateAction(
+                        id = "new_note",
+                        label = stringResource(Res.string.action_new),
+                        contentDescription = "Create note",
+                        icon = AddIcon,
+                        onClick = {
+                            if (isIos) {
+                                iosRoute.value = "notes"
+                            } else if (currentRoute != "notes") {
+                                navController.navigate("notes") { launchSingleTop = true }
+                            }
+                            createNoteSignal.intValue += 1
+                        }
+                    )
+                )
+                AppTab.PROJECTS -> listOf(
+                    CreateAction(
+                        id = "new_project",
+                        label = stringResource(Res.string.action_new),
+                        contentDescription = "Create project",
+                        icon = AddIcon,
+                        onClick = {
+                            if (isIos) {
+                                iosRoute.value = "projects"
+                            } else if (currentRoute != "projects") {
+                                navController.navigate("projects") { launchSingleTop = true }
+                            }
+                            createProjectSignal.intValue += 1
+                        }
+                    )
+                )
+                AppTab.SETTINGS -> emptyList()
+            }
             Box(
                 Modifier
                     .fillMaxSize()
@@ -175,6 +227,7 @@ fun App() {
                                     onCreateNoteHandled = { createNoteSignal.intValue = 0 },
                                     openNoteId = openNoteId.value,
                                     onOpenNoteHandled = { openNoteId.value = null },
+                                    onEditorVisibleChange = { notesEditorVisible = it },
                                     onBackFromRoot = {
                                         if (iosRoute.value != notesBackRoute) {
                                             iosRoute.value = notesBackRoute
@@ -185,6 +238,7 @@ fun App() {
                                     repo = component.repo,
                                     createProjectSignal = createProjectSignal.intValue,
                                     onCreateProjectHandled = { createProjectSignal.intValue = 0 },
+                                    onEditorVisibleChange = { projectsEditorVisible = it },
                                     onEditNote = { noteId ->
                                         openNoteId.value = noteId
                                         iosRoute.value = "notes"
@@ -248,6 +302,7 @@ fun App() {
                                     repo = component.repo,
                                     createProjectSignal = createProjectSignal.intValue,
                                     onCreateProjectHandled = { createProjectSignal.intValue = 0 },
+                                    onEditorVisibleChange = { projectsEditorVisible = it },
                                     onEditNote = { noteId ->
                                         openNoteId.value = noteId
                                         if (currentRoute != "notes") {
@@ -265,7 +320,7 @@ fun App() {
                     }
                 }
 
-                if (!notesEditorVisible) {
+                if (!notesEditorVisible && !projectsEditorVisible) {
                     PlatformBottomBar(
                         tab = tab,
                         onTab = { target ->
@@ -285,62 +340,18 @@ fun App() {
                             }
                         },
                         visibleTabs = visibleTabs,
-                        createActions = when (tab) {
-                            AppTab.HOME -> listOf(
-                                CreateAction(
-                                    id = "new_task",
-                                    label = stringResource(Res.string.action_new),
-                                    contentDescription = "Create task",
-                                    icon = AddIcon,
-                                    onClick = {
-                                        if (isIos) {
-                                            iosRoute.value = "home"
-                                        } else if (currentRoute != "home") {
-                                            navController.navigate("home") { launchSingleTop = true }
-                                        }
-                                        createTaskSignal.intValue += 1
-                                    }
-                                )
-                            )
-                            AppTab.NOTES -> listOf(
-                                CreateAction(
-                                    id = "new_note",
-                                    label = stringResource(Res.string.action_new),
-                                    contentDescription = "Create note",
-                                    icon = AddIcon,
-                                    onClick = {
-                                        if (isIos) {
-                                            iosRoute.value = "notes"
-                                        } else if (currentRoute != "notes") {
-                                            navController.navigate("notes") { launchSingleTop = true }
-                                        }
-                                        createNoteSignal.intValue += 1
-                                    }
-                                )
-                            )
-                            AppTab.PROJECTS -> listOf(
-                                CreateAction(
-                                    id = "new_project",
-                                    label = stringResource(Res.string.action_new),
-                                    contentDescription = "Create project",
-                                    icon = AddIcon,
-                                    onClick = {
-                                        if (isIos) {
-                                            iosRoute.value = "projects"
-                                        } else if (currentRoute != "projects") {
-                                            navController.navigate("projects") { launchSingleTop = true }
-                                        }
-                                        createProjectSignal.intValue += 1
-                                    }
-                                )
-                            )
-                            AppTab.SETTINGS -> emptyList()
-                        },
+                        createActions = activeCreateActions,
                         enableEffects = prefs.liquidGlass && !isIos,
                         backdrop = backdrop,
-                        modifier = Modifier
-                            .align(Alignment.BottomCenter)
-                            .padding(horizontal = 22.dp, vertical = if (isIos) 8.dp else 12.dp)
+                        modifier = if (isIos) {
+                            Modifier
+                                .align(Alignment.BottomCenter)
+                                .padding(horizontal = 16.dp, vertical = 8.dp)
+                        } else {
+                            Modifier
+                                .align(Alignment.BottomCenter)
+                                .padding(horizontal = 22.dp, vertical = 12.dp)
+                        }
                     )
                 }
             }

@@ -1,6 +1,7 @@
 package com.grigorevmp.simpletodo.ui.projects
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -32,6 +33,7 @@ fun ProjectsScreen(
     createProjectSignal: Int,
     onCreateProjectHandled: () -> Unit,
     onEditNote: (String) -> Unit,
+    onEditorVisibleChange: (Boolean) -> Unit = {},
     onBackFromRoot: () -> Unit = {}
 ) {
     val tasks by repo.tasks.collectAsState()
@@ -75,6 +77,13 @@ fun ProjectsScreen(
             }
             onCreateProjectHandled()
         }
+    }
+
+    LaunchedEffect(showEditor) {
+        onEditorVisibleChange(showEditor)
+    }
+    DisposableEffect(Unit) {
+        onDispose { onEditorVisibleChange(false) }
     }
 
     PlatformBackHandler(enabled = !showEditor) {

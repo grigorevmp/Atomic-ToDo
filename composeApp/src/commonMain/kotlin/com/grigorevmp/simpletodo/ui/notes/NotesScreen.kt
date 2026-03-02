@@ -75,6 +75,7 @@ fun NotesScreen(
         prefs = prefs,
         currentFolderId = currentFolderId,
         onCurrentFolderChange = { currentFolderId = it },
+        onBackFromRoot = onBackFromRoot,
         onOpenNote = {
             editNote = it
             showEditor = true

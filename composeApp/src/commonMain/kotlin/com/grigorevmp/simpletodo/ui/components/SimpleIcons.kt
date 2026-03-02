@@ -3,6 +3,8 @@ package com.grigorevmp.simpletodo.ui.components
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.PathFillType
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.vector.path
 import androidx.compose.ui.unit.dp
@@ -108,20 +110,33 @@ object SimpleIcons {
         viewportWidth = 24f,
         viewportHeight = 24f
     ).apply {
-        path(fill = SolidColor(Color.Black), pathFillType = PathFillType.NonZero) {
-            moveTo(3f, 12f)
-            lineTo(6f, 8f)
-            lineTo(12f, 6f)
-            lineTo(18f, 8f)
-            lineTo(21f, 12f)
-            lineTo(18f, 16f)
-            lineTo(12f, 18f)
-            lineTo(6f, 16f)
-            close()
-            moveTo(12f, 9f)
-            lineTo(14f, 12f)
-            lineTo(12f, 15f)
-            lineTo(10f, 12f)
+        path(
+            fill = SolidColor(Color.Transparent),
+            stroke = SolidColor(Color.Black),
+            strokeLineWidth = 1.8f,
+            strokeLineCap = StrokeCap.Round,
+            strokeLineJoin = StrokeJoin.Round,
+            pathFillType = PathFillType.NonZero
+        ) {
+            moveTo(2.5f, 12f)
+            curveTo(4.8f, 8.5f, 8f, 6.5f, 12f, 6.5f)
+            curveTo(16f, 6.5f, 19.2f, 8.5f, 21.5f, 12f)
+            curveTo(19.2f, 15.5f, 16f, 17.5f, 12f, 17.5f)
+            curveTo(8f, 17.5f, 4.8f, 15.5f, 2.5f, 12f)
+        }
+        path(
+            fill = SolidColor(Color.Transparent),
+            stroke = SolidColor(Color.Black),
+            strokeLineWidth = 1.8f,
+            strokeLineCap = StrokeCap.Round,
+            strokeLineJoin = StrokeJoin.Round,
+            pathFillType = PathFillType.NonZero
+        ) {
+            moveTo(12f, 9.5f)
+            curveTo(13.4f, 9.5f, 14.5f, 10.6f, 14.5f, 12f)
+            curveTo(14.5f, 13.4f, 13.4f, 14.5f, 12f, 14.5f)
+            curveTo(10.6f, 14.5f, 9.5f, 13.4f, 9.5f, 12f)
+            curveTo(9.5f, 10.6f, 10.6f, 9.5f, 12f, 9.5f)
             close()
         }
     }.build()
@@ -133,19 +148,30 @@ object SimpleIcons {
         viewportWidth = 24f,
         viewportHeight = 24f
     ).apply {
-        path(fill = SolidColor(Color.Black), pathFillType = PathFillType.NonZero) {
+        path(
+            fill = SolidColor(Color.Transparent),
+            stroke = SolidColor(Color.Black),
+            strokeLineWidth = 1.8f,
+            strokeLineCap = StrokeCap.Round,
+            strokeLineJoin = StrokeJoin.Round,
+            pathFillType = PathFillType.NonZero
+        ) {
+            moveTo(2.5f, 12f)
+            curveTo(4.8f, 8.5f, 8f, 6.5f, 12f, 6.5f)
+            curveTo(16f, 6.5f, 19.2f, 8.5f, 21.5f, 12f)
+            curveTo(19.2f, 15.5f, 16f, 17.5f, 12f, 17.5f)
+            curveTo(8f, 17.5f, 4.8f, 15.5f, 2.5f, 12f)
+        }
+        path(
+            fill = SolidColor(Color.Transparent),
+            stroke = SolidColor(Color.Black),
+            strokeLineWidth = 1.8f,
+            strokeLineCap = StrokeCap.Round,
+            strokeLineJoin = StrokeJoin.Round,
+            pathFillType = PathFillType.NonZero
+        ) {
             moveTo(4f, 5f)
-            lineTo(5.5f, 3.5f)
-            lineTo(20.5f, 18.5f)
-            lineTo(19f, 20f)
-            close()
-            moveTo(3f, 12f)
-            lineTo(6f, 8f)
-            lineTo(12f, 6f)
-            lineTo(14f, 6.5f)
-            lineTo(8f, 12.5f)
-            lineTo(6f, 16f)
-            close()
+            lineTo(20f, 19f)
         }
     }.build()
 

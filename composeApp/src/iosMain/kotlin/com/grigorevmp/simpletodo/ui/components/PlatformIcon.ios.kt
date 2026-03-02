@@ -12,6 +12,7 @@ import simpletodo.composeapp.generated.resources.add
 import simpletodo.composeapp.generated.resources.filter
 import simpletodo.composeapp.generated.resources.home
 import simpletodo.composeapp.generated.resources.notes
+import simpletodo.composeapp.generated.resources.projects
 import simpletodo.composeapp.generated.resources.settings
 import simpletodo.composeapp.generated.resources.tag
 
@@ -26,7 +27,7 @@ actual fun PlatformIcon(
     val painter = when (id) {
         AppIconId.Home -> painterResource(Res.drawable.home)
         AppIconId.Notes -> painterResource(Res.drawable.notes)
-        AppIconId.Projects -> rememberVectorPainter(ProjectsIcon)
+        AppIconId.Projects -> painterResource(Res.drawable.projects)
         AppIconId.Settings -> painterResource(Res.drawable.settings)
         AppIconId.Filter -> painterResource(Res.drawable.filter)
         AppIconId.Tag -> painterResource(Res.drawable.tag)

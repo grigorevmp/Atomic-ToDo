@@ -71,6 +71,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -572,20 +573,41 @@ fun NoteEditorScreen(
             Box(Modifier.fillMaxSize()) {
                 val bottomBarHeight = if (preview) 0.dp else 96.dp
                 Column(Modifier.fillMaxSize()) {
+                    val headerIconButtonSize = if (isIos) 44.dp else 48.dp
+                    val headerBackIconSize = if (isIos) 26.dp else 24.dp
+                    val actionIconSize: Dp = if (isIos) 24.dp else 24.dp
                     Row(
                         Modifier.fillMaxWidth().padding(horizontal = 18.dp, vertical = 6.dp),
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Text(
-                            if (initial == null) stringResource(Res.string.note_editor_new) else stringResource(
-                                Res.string.note_editor_edit
-                            ),
-                            style = MaterialTheme.typography.titleLarge
-                        )
+                        Row(
+                            modifier = Modifier.weight(1f),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            IconButton(
+                                onClick = { requestDismiss(animate = true) },
+                                modifier = Modifier.size(headerIconButtonSize)
+                            ) {
+                                Icon(
+                                    imageVector = SimpleIcons.ArrowLeft,
+                                    contentDescription = stringResource(Res.string.note_editor_close_cd),
+                                    modifier = Modifier.size(headerBackIconSize)
+                                )
+                            }
+                            Text(
+                                if (initial == null) {
+                                    stringResource(Res.string.note_editor_new)
+                                } else {
+                                    stringResource(Res.string.note_editor_edit)
+                                },
+                                style = MaterialTheme.typography.titleLarge,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                        }
 
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            val iosTopBarIconSize: Dp = 24.dp
                             val visibilityPainter = rememberVectorPainter(
                                 if (preview) SimpleIcons.Edit else VisibilityIcon
                             )
@@ -600,7 +622,7 @@ fun NoteEditorScreen(
                                         stringResource(Res.string.note_editor_preview_mode_cd)
                                     },
                                     tint = visibilityTint,
-                                    modifier = if (isIos) Modifier.size(iosTopBarIconSize) else Modifier
+                                    modifier = Modifier.size(actionIconSize)
                                 )
                             }
                             IconButton(onClick = {
@@ -617,7 +639,7 @@ fun NoteEditorScreen(
                                         stringResource(Res.string.note_editor_favorite_cd)
                                     },
                                     tint = if (favorite) MaterialTheme.colorScheme.primary else LocalContentColor.current,
-                                    modifier = Modifier.size(iosTopBarIconSize)
+                                    modifier = Modifier.size(actionIconSize)
                                 )
                             }
                         }
@@ -1059,6 +1081,10 @@ private fun BlockRow(
     val text = block.value.text
     val slashQuery = if (text.startsWith("/")) text.drop(1) else null
     val showSlashMenu = slashQuery != null && !slashQuery.contains(" ")
+    val dragIconSize = if (isIos) 20.dp else 22.dp
+    val sideButtonSize = if (isIos) 30.dp else 32.dp
+    val moreIconSize = if (isIos) 20.dp else 18.dp
+    val addIconSize = if (isIos) 16.dp else 18.dp
 
     val typeItems = remember(typeLabels) {
         listOf(
@@ -1117,7 +1143,7 @@ private fun BlockRow(
                     contentDescription = null,
                     tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier
-                        .size(22.dp)
+                        .size(dragIconSize)
                         .pointerInput(block.id) {
                             detectDragGesturesAfterLongPress(
                                 onDragStart = { onDragStart() },
@@ -1227,22 +1253,22 @@ private fun BlockRow(
                 ) {
                     IconButton(
                         onClick = { showMenu = true },
-                        modifier = Modifier.size(32.dp)
+                        modifier = Modifier.size(sideButtonSize)
                     ) {
                         Icon(
                             SimpleIcons.MoreVertical,
                             contentDescription = null,
-                            modifier = Modifier.size(18.dp)
+                            modifier = Modifier.size(moreIconSize)
                         )
                     }
                     IconButton(
                         onClick = { onAddBelow() },
-                        modifier = Modifier.size(32.dp)
+                        modifier = Modifier.size(sideButtonSize)
                     ) {
                         Icon(
                             AddIcon,
                             contentDescription = stringResource(Res.string.note_block_add),
-                            modifier = Modifier.size(18.dp)
+                            modifier = Modifier.size(addIconSize)
                         )
                     }
                 }

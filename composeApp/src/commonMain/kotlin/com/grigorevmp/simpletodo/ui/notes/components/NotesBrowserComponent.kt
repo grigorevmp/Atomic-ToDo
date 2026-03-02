@@ -123,6 +123,7 @@ fun NotesBrowserContent(
     prefs: AppPrefs,
     currentFolderId: String?,
     onCurrentFolderChange: (String?) -> Unit,
+    onBackFromRoot: () -> Unit,
     onOpenNote: (Note) -> Unit
 ) {
     val scope = rememberCoroutineScope()
@@ -133,6 +134,7 @@ fun NotesBrowserContent(
             path = path,
             noteSort = prefs.noteSort,
             onNavigate = onCurrentFolderChange,
+            onBackFromRoot = onBackFromRoot,
             onApplySort = { cfg -> scope.launch { repo.setNoteSort(cfg) } }
         )
 
@@ -157,11 +159,24 @@ private fun NotesHeaderSection(
     path: List<NoteFolder>,
     noteSort: NoteSortConfig,
     onNavigate: (String?) -> Unit,
+    onBackFromRoot: () -> Unit,
     onApplySort: (NoteSortConfig) -> Unit
 ) {
     var showSort by remember { mutableStateOf(false) }
 
-    NotesTopBar(path = path, onSort = { showSort = true })
+    NotesTopBar(
+        path = path,
+        showBack = isIos,
+        onBack = {
+            if (path.isNotEmpty()) {
+                val parent = path.dropLast(1).lastOrNull()?.id
+                onNavigate(parent)
+            } else {
+                onBackFromRoot()
+            }
+        },
+        onSort = { showSort = true }
+    )
 
     AnimatedVisibility(visible = path.isNotEmpty()) {
         val scrollState = rememberScrollState()
@@ -487,7 +502,12 @@ private fun NotesItemsSection(
 }
 
 @Composable
-private fun NotesTopBar(path: List<NoteFolder>, onSort: () -> Unit) {
+private fun NotesTopBar(
+    path: List<NoteFolder>,
+    showBack: Boolean,
+    onBack: () -> Unit,
+    onSort: () -> Unit
+) {
     val title = if (path.isEmpty()) stringResource(Res.string.notes_title) else path.last().name
     Row(
         Modifier
@@ -495,10 +515,27 @@ private fun NotesTopBar(path: List<NoteFolder>, onSort: () -> Unit) {
             .padding(start = 18.dp, end = 13.dp)
             .padding(vertical = 14.dp)
             .height(48.dp),
-        horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Text(title, style = MaterialTheme.typography.titleLarge)
+        if (showBack) {
+            IconButton(onClick = onBack) {
+                Icon(
+                    imageVector = SimpleIcons.ArrowLeft,
+                    contentDescription = stringResource(Res.string.notes_back),
+                    tint = LocalContentColor.current,
+                    modifier = Modifier.size(22.dp)
+                )
+            }
+        } else {
+            Spacer(Modifier.width(48.dp))
+        }
+        Text(
+            title,
+            style = MaterialTheme.typography.titleLarge,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.weight(1f)
+        )
         Row {
             IconButton(onClick = {}, enabled = false) {
                 PlatformIcon(

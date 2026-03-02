@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Surface
@@ -27,15 +28,18 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.grigorevmp.simpletodo.model.Importance
 import com.grigorevmp.simpletodo.model.Note
 import com.grigorevmp.simpletodo.model.TodoTask
+import com.grigorevmp.simpletodo.platform.isIos
 import com.grigorevmp.simpletodo.ui.components.AppIconId
 import com.grigorevmp.simpletodo.ui.components.CircleCheckbox
 import com.grigorevmp.simpletodo.ui.components.FlameIcon
 import com.grigorevmp.simpletodo.ui.components.NoteIcon
 import com.grigorevmp.simpletodo.ui.components.PlatformIcon
+import com.grigorevmp.simpletodo.ui.components.SimpleIcons
 import com.grigorevmp.simpletodo.util.formatDeadline
 import com.grigorevmp.simpletodo.util.nowInstant
 import kotlin.math.abs
@@ -54,6 +58,7 @@ import simpletodo.composeapp.generated.resources.home_note_singular
 import simpletodo.composeapp.generated.resources.home_overdue
 import simpletodo.composeapp.generated.resources.home_subtasks
 import simpletodo.composeapp.generated.resources.hours_short
+import simpletodo.composeapp.generated.resources.task_close
 
 @Composable
 @OptIn(ExperimentalMaterial3Api::class)
@@ -67,6 +72,8 @@ internal fun TaskDetailsSheet(
     onEdit: () -> Unit,
     onClose: () -> Unit
 ) {
+    val iconButtonSize = if (isIos) 44.dp else 48.dp
+    val iconSize = if (isIos) 26.dp else 24.dp
     val sheetState = rememberModalBottomSheetState(
         skipPartiallyExpanded = task.plan.isNotBlank() || task.subtasks.isNotEmpty()
     )
@@ -85,6 +92,30 @@ internal fun TaskDetailsSheet(
                 verticalArrangement = Arrangement.spacedBy(16.dp),
                 contentPadding = PaddingValues(bottom = 16.dp)
             ) {
+                item {
+                    Row(
+                        Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        IconButton(
+                            onClick = onClose,
+                            modifier = Modifier.size(iconButtonSize)
+                        ) {
+                            Icon(
+                                imageVector = SimpleIcons.ArrowLeft,
+                                contentDescription = stringResource(Res.string.task_close),
+                                modifier = Modifier.size(iconSize)
+                            )
+                        }
+                        Text(
+                            stringResource(Res.string.home_details),
+                            style = MaterialTheme.typography.titleLarge,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
+                }
+
                 item {
                     Row(
                         Modifier.fillMaxWidth(),

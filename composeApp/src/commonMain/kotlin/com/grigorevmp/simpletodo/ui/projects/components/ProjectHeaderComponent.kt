@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -14,6 +15,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.grigorevmp.simpletodo.platform.isIos
 import com.grigorevmp.simpletodo.ui.components.AppIconId
 import com.grigorevmp.simpletodo.ui.components.PlatformIcon
 import com.grigorevmp.simpletodo.ui.components.SimpleIcons
@@ -28,6 +30,9 @@ fun SelectedProjectHeader(
     onBack: () -> Unit,
     onOpenSettings: () -> Unit
 ) {
+    val iconButtonSize = if (isIos) 44.dp else 48.dp
+    val iconSize = if (isIos) 26.dp else 24.dp
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -36,10 +41,14 @@ fun SelectedProjectHeader(
         verticalAlignment = Alignment.CenterVertically
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            IconButton(onClick = onBack) {
+            IconButton(
+                onClick = onBack,
+                modifier = Modifier.size(iconButtonSize)
+            ) {
                 Icon(
                     imageVector = SimpleIcons.ArrowLeft,
-                    contentDescription = stringResource(Res.string.notes_title)
+                    contentDescription = stringResource(Res.string.notes_title),
+                    modifier = Modifier.size(iconSize)
                 )
             }
             Text(
@@ -50,11 +59,15 @@ fun SelectedProjectHeader(
                 modifier = Modifier.width(190.dp)
             )
         }
-        IconButton(onClick = onOpenSettings) {
+        IconButton(
+            onClick = onOpenSettings,
+            modifier = Modifier.size(iconButtonSize)
+        ) {
             PlatformIcon(
                 id = AppIconId.Settings,
                 contentDescription = stringResource(Res.string.settings_title),
-                tint = MaterialTheme.colorScheme.onSurface
+                tint = MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier.size(iconSize)
             )
         }
     }

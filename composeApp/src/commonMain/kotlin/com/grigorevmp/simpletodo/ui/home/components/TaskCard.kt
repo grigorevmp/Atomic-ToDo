@@ -48,12 +48,13 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.grigorevmp.simpletodo.model.Importance
 import com.grigorevmp.simpletodo.model.TodoTask
+import com.grigorevmp.simpletodo.platform.isIos
 import com.grigorevmp.simpletodo.ui.components.AppIconId
 import com.grigorevmp.simpletodo.ui.components.CircleCheckbox
-import com.grigorevmp.simpletodo.ui.components.DeleteIcon
 import com.grigorevmp.simpletodo.ui.components.EditIcon
 import com.grigorevmp.simpletodo.ui.components.FlameIcon
 import com.grigorevmp.simpletodo.ui.components.NoteIcon
+import com.grigorevmp.simpletodo.ui.components.PlatformDeleteIcon
 import com.grigorevmp.simpletodo.ui.components.PlatformIcon
 import com.grigorevmp.simpletodo.ui.components.SimpleIcons
 import com.grigorevmp.simpletodo.util.formatDeadline
@@ -259,7 +260,8 @@ fun TaskCard(
                                     PlatformIcon(
                                         id = AppIconId.Tag,
                                         contentDescription = null,
-                                        tint = MaterialTheme.colorScheme.primary
+                                        tint = MaterialTheme.colorScheme.primary,
+                                        modifier = if (isIos) Modifier.size(22.dp) else Modifier
                                     )
                                     Spacer(Modifier.width(6.dp))
                                     Text(
@@ -390,7 +392,12 @@ fun TaskCard(
                     )
                     DropdownMenuItem(
                         text = { Text(stringResource(Res.string.task_delete), style = MaterialTheme.typography.titleMedium) },
-                        leadingIcon = { Icon(DeleteIcon, contentDescription = null) },
+                        leadingIcon = {
+                            PlatformDeleteIcon(
+                                contentDescription = null,
+                                tint = LocalContentColor.current
+                            )
+                        },
                         onClick = {
                             showActions = false
                             onDelete()
@@ -404,7 +411,12 @@ fun TaskCard(
                                     style = MaterialTheme.typography.titleMedium
                                 )
                             },
-                            leadingIcon = { Icon(DeleteIcon, contentDescription = null) },
+                            leadingIcon = {
+                                PlatformDeleteIcon(
+                                    contentDescription = null,
+                                    tint = LocalContentColor.current
+                                )
+                            },
                             onClick = {
                                 showActions = false
                                 onClearCompleted()

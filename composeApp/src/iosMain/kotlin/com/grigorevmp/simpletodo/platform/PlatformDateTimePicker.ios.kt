@@ -1,9 +1,13 @@
 package com.grigorevmp.simpletodo.platform
 
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -18,7 +22,11 @@ import androidx.compose.ui.unit.dp
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.datetime.Instant
 import platform.Foundation.NSDate
+import platform.Foundation.timeIntervalSinceDate
 import platform.UIKit.UIDatePicker
+import platform.UIKit.UIDatePickerMode
+import platform.UIKit.UIDatePickerStyle
+import kotlin.math.abs
 
 @OptIn(ExperimentalForeignApi::class)
 @Composable
@@ -28,30 +36,43 @@ actual fun PlatformDateTimePicker(
 ) {
     var selected by remember { mutableStateOf(current) }
     var pickerRef by remember { mutableStateOf<UIDatePicker?>(null) }
+    var syncPickerWithCurrent by remember { mutableStateOf(true) }
 
     LaunchedEffect(current) {
         selected = current
+        syncPickerWithCurrent = true
     }
 
     Column(modifier = Modifier.fillMaxWidth()) {
-        UIKitView(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 8.dp),
-            factory = {
-                UIDatePicker().apply {
-                    selected?.let { setDate(it.toNSDate(), animated = false) }
-                    pickerRef = this
+        Surface(
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp),
+            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f),
+            shape = RoundedCornerShape(14.dp)
+        ) {
+            UIKitView(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(180.dp),
+                factory = {
+                    UIDatePicker().apply {
+                        datePickerMode = UIDatePickerMode.UIDatePickerModeDateAndTime
+                        preferredDatePickerStyle = UIDatePickerStyle.UIDatePickerStyleWheels
+                        selected?.let { setDate(it.toNSDate(), animated = false) }
+                        pickerRef = this
+                    }
+                },
+                update = { picker ->
+                    pickerRef = picker
+                    if (syncPickerWithCurrent) {
+                        val targetDate = selected?.toNSDate() ?: picker.date
+                        if (abs(picker.date.timeIntervalSinceDate(targetDate)) > 0.5) {
+                            picker.setDate(targetDate, animated = false)
+                        }
+                        syncPickerWithCurrent = false
+                    }
                 }
-            },
-            update = { picker ->
-                pickerRef = picker
-                val targetDate = selected?.toNSDate()
-                if (targetDate != null) {
-                    picker.setDate(targetDate, animated = false)
-                }
-            }
-        )
+            )
+        }
 
         Row(modifier = Modifier.padding(top = 6.dp)) {
             TextButton(
