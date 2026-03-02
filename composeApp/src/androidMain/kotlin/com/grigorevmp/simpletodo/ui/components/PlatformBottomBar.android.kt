@@ -8,6 +8,7 @@ import com.kyant.backdrop.backdrops.LayerBackdrop
 actual fun PlatformBottomBar(
     tab: AppTab,
     onTab: (AppTab) -> Unit,
+    visibleTabs: List<AppTab>,
     createActions: List<CreateAction>,
     enableEffects: Boolean,
     backdrop: LayerBackdrop,
@@ -16,6 +17,7 @@ actual fun PlatformBottomBar(
     FloatingNavBar(
         tab = tab,
         onTab = onTab,
+        visibleTabs = visibleTabs,
         createActions = createActions,
         enableEffects = enableEffects,
         backdrop = backdrop,

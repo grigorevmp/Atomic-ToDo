@@ -2,6 +2,7 @@
 <resources>
     <string name="nav_home">Home</string>
     <string name="nav_notes">Notes</string>
+    <string name="nav_projects">Projects</string>
     <string name="nav_settings">Settings</string>
     <string name="action_new">New</string>
 
@@ -60,6 +61,8 @@
     <string name="settings_language_system">System</string>
     <string name="settings_language_en">English</string>
     <string name="settings_language_ru">Russian</string>
+    <string name="settings_sections_title">App sections</string>
+    <string name="settings_sections_desc">Hide tabs from the bottom bar. At least one section stays enabled.</string>
     <string name="settings_data_title">Import / Export</string>
     <string name="settings_data_export">Export data</string>
     <string name="settings_data_import">Import data</string>
@@ -138,12 +141,12 @@
     <string name="home_overdue">Overdue</string>
     <string name="home_in_days">In %1$s days</string>
     <string name="home_planned_earlier">Planned earlier</string>
-    <string name="home_motivation_1">Small steps, big momentum</string>
-    <string name="home_motivation_2">Focus on the next task</string>
-    <string name="home_motivation_3">Done beats perfect</string>
-    <string name="home_motivation_4">One task at a time</string>
-    <string name="home_motivation_5">Make today count</string>
-    <string name="home_motivation_6">Clear the next block</string>
+    <string name="home_motivation_1">Small steps add up.</string>
+    <string name="home_motivation_2">Just do the next thing.</string>
+    <string name="home_motivation_3">Done is better than perfect.</string>
+    <string name="home_motivation_4">One task at a time.</string>
+    <string name="home_motivation_5">Make today count.</string>
+    <string name="home_motivation_6">Finish this block and move on.</string>
     <string name="home_favorite_notes">Favorite notes</string>
     <string name="home_no_deadline">No deadline</string>
 
@@ -205,6 +208,14 @@
     <string name="task_delete">Delete</string>
     <string name="task_pinned">Pinned</string>
     <string name="home_pinned_tasks">Pinned tasks</string>
+    <string name="task_move_to_project">Move to project</string>
+    <string name="task_remove_from_project">Remove from project</string>
+    <string name="task_project_title">Project</string>
+    <string name="task_no_project">No project</string>
+    <string name="task_no_project_selected">No project (selected)</string>
+    <string name="task_project_selected">%1$s (selected)</string>
+    <string name="task_project_status_title">Project status</string>
+    <string name="task_no_status">No status</string>
 
     <string name="note_editor_new">New note</string>
     <string name="note_editor_edit">Edit</string>
@@ -222,9 +233,13 @@
     <string name="note_editor_create">Create</string>
     <string name="note_editor_save">Save</string>
     <string name="note_editor_save_cd">Save</string>
+    <string name="note_editor_copy_all">Copy all</string>
     <string name="note_block_add">Add block</string>
+    <string name="note_block_add_above">Add above</string>
     <string name="note_block_duplicate">Duplicate</string>
     <string name="note_block_delete">Delete block</string>
+    <string name="note_block_move_up">Move up</string>
+    <string name="note_block_move_down">Move down</string>
     <string name="note_block_turn_into">Turn into</string>
     <string name="note_slash_hint">Type / for blocks</string>
     <string name="note_block_h1">Heading 1</string>
@@ -248,6 +263,7 @@
     <string name="note_block_add_column_label">Add column</string>
     <string name="note_block_pick_file">Pick file</string>
     <string name="note_block_open_file">Open</string>
+    <string name="note_block_go_to">Go to</string>
     <string name="note_block_linked_from">Linked from</string>
 
     <string name="notes_sort_title">Filters</string>
@@ -290,6 +306,28 @@
     <string name="notes_count">%1$s notes</string>
     <string name="notes_expand_cd">Expand</string>
     <string name="notes_collapse_cd">Collapse</string>
+    <string name="projects_title">Projects</string>
+    <string name="projects_create_cd">Create project</string>
+    <string name="projects_empty">Create your first project</string>
+    <string name="projects_tab_all">All</string>
+    <string name="projects_tab_kanban">Kanban</string>
+    <string name="projects_show_completed">Show completed</string>
+    <string name="projects_completed_column">Completed (%1$s)</string>
+    <string name="projects_new_title">New project</string>
+    <string name="projects_name_label">Project name</string>
+    <string name="projects_statuses_label">Statuses (comma separated)</string>
+    <string name="projects_statuses_title">Statuses</string>
+    <string name="projects_status_input">Status name</string>
+    <string name="projects_status_add">Status</string>
+    <string name="projects_statuses_default">Todo, Doing, Done</string>
+    <string name="projects_move_task_title">Move task</string>
+    <string name="projects_action_done">Done</string>
+    <string name="projects_action_undo">Undo</string>
+    <string name="projects_action_edit">Edit</string>
+    <string name="projects_action_move">Move</string>
+    <string name="projects_sections_title">Visible sections</string>
+    <string name="projects_section_no_status">No status</string>
+    <string name="projects_section_completed">Completed</string>
 
     <string name="task_link_label">Linked task</string>
     <string name="task_select_task">Select task</string>

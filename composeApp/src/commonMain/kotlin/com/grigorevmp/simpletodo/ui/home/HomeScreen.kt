@@ -73,6 +73,7 @@ import androidx.compose.ui.unit.dp
 import com.grigorevmp.simpletodo.data.TodoRepository
 import com.grigorevmp.simpletodo.model.Importance
 import com.grigorevmp.simpletodo.model.Note
+import com.grigorevmp.simpletodo.model.Project
 import com.grigorevmp.simpletodo.model.Tag
 import com.grigorevmp.simpletodo.model.TodoTask
 import com.grigorevmp.simpletodo.platform.isIos
@@ -128,6 +129,11 @@ import simpletodo.composeapp.generated.resources.home_subtasks
 import simpletodo.composeapp.generated.resources.home_tag_all
 import simpletodo.composeapp.generated.resources.home_tag_none
 import simpletodo.composeapp.generated.resources.home_tags_cd
+import simpletodo.composeapp.generated.resources.task_close
+import simpletodo.composeapp.generated.resources.task_no_project_selected
+import simpletodo.composeapp.generated.resources.task_project_selected
+import simpletodo.composeapp.generated.resources.task_project_title
+import simpletodo.composeapp.generated.resources.task_remove_from_project
 import simpletodo.composeapp.generated.resources.home_untitled
 import simpletodo.composeapp.generated.resources.hours_short
 import simpletodo.composeapp.generated.resources.tab_calendar
@@ -153,6 +159,7 @@ fun HomeScreen(
     val tasks by repo.tasks.collectAsState()
     val notes by repo.notes.collectAsState()
     val links by repo.taskNoteLinks.collectAsState()
+    val projects by repo.projects.collectAsState()
     val prefs by repo.prefs.collectAsState()
     val scope = rememberCoroutineScope()
 
@@ -167,6 +174,7 @@ fun HomeScreen(
     )
     val motivation = remember(motivations) { motivations.random() }
     val notesById = remember(notes) { notes.associateBy { it.id } }
+    val projectsById = remember(projects) { projects.associateBy { it.id } }
     val favoriteNotes =
         remember(notes) { notes.filter { it.favorite }.sortedByDescending { it.updatedAt } }
 
@@ -178,6 +186,7 @@ fun HomeScreen(
     var tagFilter by remember { mutableStateOf<String?>(null) }
     var tab by remember { mutableStateOf(HomeTab.TIMELINE) }
     var detailsTaskId by remember { mutableStateOf<String?>(null) }
+    var projectMoveTask by remember { mutableStateOf<TodoTask?>(null) }
     val celebrationTrigger = remember { mutableIntStateOf(0) }
 
     val filtered = remember(sorted, tagFilter) {
@@ -291,6 +300,7 @@ fun HomeScreen(
                                 showCompleted = prefs.showCompletedTasks,
                                 onOpenDetails = { t -> detailsTaskId = t.id },
                                 tagName = { tagId -> prefs.tags.firstOrNull { it.id == tagId }?.name },
+                                projectName = { projectId -> projectsById[projectId]?.name },
                                 noteCount = { t -> notesForTask(t).size },
                                 onOpenNotes = { t ->
                                     val linked = notesForTask(t)
@@ -298,6 +308,7 @@ fun HomeScreen(
                                         taskNotesSheet = t to linked
                                     }
                                 },
+                                onMoveProject = { t -> projectMoveTask = t },
                                 dimScroll = prefs.dimScroll,
                                 onOpenFavorite = { note -> previewNote = note }
                             )
@@ -341,6 +352,7 @@ fun HomeScreen(
                                 showCompleted = prefs.showCompletedTasks,
                                 onOpenDetails = { t -> detailsTaskId = t.id },
                                 tagName = { tagId -> prefs.tags.firstOrNull { it.id == tagId }?.name },
+                                projectName = { projectId -> projectsById[projectId]?.name },
                                 noteCount = { t -> notesForTask(t).size },
                                 onOpenNotes = { t ->
                                     val linked = notesForTask(t)
@@ -348,6 +360,7 @@ fun HomeScreen(
                                         taskNotesSheet = t to linked
                                     }
                                 },
+                                onMoveProject = { t -> projectMoveTask = t },
                                 dimScroll = prefs.dimScroll,
                                 onOpenFavorite = { note -> previewNote = note }
                             )
@@ -380,6 +393,7 @@ fun HomeScreen(
                                 showCompleted = prefs.showCompletedTasks,
                                 onOpenDetails = { t -> detailsTaskId = t.id },
                                 tagName = { tagId -> prefs.tags.firstOrNull { it.id == tagId }?.name },
+                                projectName = { projectId -> projectsById[projectId]?.name },
                                 noteCount = { t -> notesForTask(t).size },
                                 onOpenNotes = { t ->
                                     val linked = notesForTask(t)
@@ -387,6 +401,7 @@ fun HomeScreen(
                                         taskNotesSheet = t to linked
                                     }
                                 },
+                                onMoveProject = { t -> projectMoveTask = t },
                                 dimScroll = prefs.dimScroll,
                                 backdrop = listBackdrop
                             )
@@ -423,6 +438,7 @@ fun HomeScreen(
             TaskEditorSheet(
                 repo = repo,
                 prefsTagList = prefs.tags,
+                projects = projects,
                 notes = notes,
                 initial = editTask,
                 onDismiss = { showEditor = false }
@@ -492,7 +508,62 @@ fun HomeScreen(
                 onDismiss = { showSort = false }
             )
         }
+
+        projectMoveTask?.let { task ->
+            MoveTaskToProjectDialog(
+                task = task,
+                projects = projects,
+                onPick = { projectId ->
+                    scope.launch { repo.assignTaskToProject(task.id, projectId) }
+                    projectMoveTask = null
+                },
+                onDismiss = { projectMoveTask = null }
+            )
+        }
     }
+}
+
+@Composable
+private fun MoveTaskToProjectDialog(
+    task: TodoTask,
+    projects: List<Project>,
+    onPick: (String?) -> Unit,
+    onDismiss: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(Res.string.task_project_title)) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                TextButton(onClick = { onPick(null) }) {
+                    Text(
+                        if (task.projectId == null) {
+                            stringResource(Res.string.task_no_project_selected)
+                        } else {
+                            stringResource(Res.string.task_remove_from_project)
+                        }
+                    )
+                }
+                projects.forEach { project ->
+                    TextButton(onClick = { onPick(project.id) }) {
+                        Text(
+                            if (task.projectId == project.id) {
+                                stringResource(Res.string.task_project_selected, project.name)
+                            } else {
+                                project.name
+                            }
+                        )
+                    }
+                }
+            }
+        },
+        confirmButton = {},
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text(stringResource(Res.string.task_close))
+            }
+        }
+    )
 }
 
 
@@ -1549,8 +1620,10 @@ private fun TimelineList(
     onClearCompleted: () -> Unit,
     showCompleted: Boolean,
     tagName: (String?) -> String?,
+    projectName: (String?) -> String? = { null },
     noteCount: (TodoTask) -> Int,
     onOpenNotes: (TodoTask) -> Unit,
+    onMoveProject: (TodoTask) -> Unit = {},
     dimScroll: Boolean,
     onOpenFavorite: (Note) -> Unit
 ) {
@@ -1559,8 +1632,11 @@ private fun TimelineList(
     val pinnedLabel = stringResource(Res.string.home_pinned_tasks)
     val pinnedTasks = remember(tasks) { tasks.filter { it.pinned } }
     val otherTasks = remember(tasks) { tasks.filterNot { it.pinned } }
-    val grouped = remember(tasks, plannedEarlierLabel, noDeadlineLabel) {
-        otherTasks.groupBy { t ->
+    val visibleOtherTasks = remember(otherTasks, showCompleted) {
+        if (showCompleted) otherTasks else otherTasks.filterNot { it.done }
+    }
+    val grouped = remember(visibleOtherTasks, plannedEarlierLabel, noDeadlineLabel) {
+        visibleOtherTasks.groupBy { t ->
             val now = nowInstant()
             val planned = t.plannedAt
             val deadline = t.deadline
@@ -1623,6 +1699,7 @@ private fun TimelineList(
                             TaskCard(
                                 task = t,
                                 tagLabel = tagName(t.tagId),
+                                projectLabel = projectName(t.projectId),
                                 noteCount = noteCount(t),
                                 onOpenNotes = { onOpenNotes(t) },
                                 onToggleDone = { onToggleDone(t.id) },
@@ -1631,6 +1708,7 @@ private fun TimelineList(
                                 onEdit = { onEdit(t) },
                                 onTogglePinned = { onTogglePinned(t.id) },
                                 onDelete = { onDelete(t.id) },
+                                onMoveProject = { onMoveProject(t) },
                                 onClearCompleted = onClearCompleted,
                                 modifier = Modifier.padding(bottom = 12.dp)
                             )
@@ -1663,6 +1741,7 @@ private fun TimelineList(
                             TaskCard(
                                 task = t,
                                 tagLabel = tagName(t.tagId),
+                                projectLabel = projectName(t.projectId),
                                 noteCount = noteCount(t),
                                 onOpenNotes = { onOpenNotes(t) },
                                 onToggleDone = { onToggleDone(t.id) },
@@ -1671,6 +1750,7 @@ private fun TimelineList(
                                 onEdit = { onEdit(t) },
                                 onTogglePinned = { onTogglePinned(t.id) },
                                 onDelete = { onDelete(t.id) },
+                                onMoveProject = { onMoveProject(t) },
                                 onClearCompleted = onClearCompleted,
                                 modifier = Modifier.padding(bottom = 12.dp)
                             )
@@ -1705,8 +1785,10 @@ private fun FlatList(
     onClearCompleted: () -> Unit,
     showCompleted: Boolean,
     tagName: (String?) -> String?,
+    projectName: (String?) -> String? = { null },
     noteCount: (TodoTask) -> Int,
     onOpenNotes: (TodoTask) -> Unit,
+    onMoveProject: (TodoTask) -> Unit = {},
     dimScroll: Boolean,
     onOpenFavorite: (Note) -> Unit
 ) {
@@ -1757,6 +1839,7 @@ private fun FlatList(
                             TaskCard(
                                 task = t,
                                 tagLabel = tagName(t.tagId),
+                                projectLabel = projectName(t.projectId),
                                 noteCount = noteCount(t),
                                 onOpenNotes = { onOpenNotes(t) },
                                 onToggleDone = { onToggleDone(t.id) },
@@ -1765,6 +1848,7 @@ private fun FlatList(
                                 onEdit = { onEdit(t) },
                                 onTogglePinned = { onTogglePinned(t.id) },
                                 onDelete = { onDelete(t.id) },
+                                onMoveProject = { onMoveProject(t) },
                                 onClearCompleted = onClearCompleted
                             )
                         }
@@ -1781,6 +1865,7 @@ private fun FlatList(
                         TaskCard(
                             task = t,
                             tagLabel = tagName(t.tagId),
+                            projectLabel = projectName(t.projectId),
                             noteCount = noteCount(t),
                             onOpenNotes = { onOpenNotes(t) },
                             onToggleDone = { onToggleDone(t.id) },
@@ -1789,6 +1874,7 @@ private fun FlatList(
                             onEdit = { onEdit(t) },
                             onTogglePinned = { onTogglePinned(t.id) },
                             onDelete = { onDelete(t.id) },
+                            onMoveProject = { onMoveProject(t) },
                             onClearCompleted = onClearCompleted
                         )
                     }

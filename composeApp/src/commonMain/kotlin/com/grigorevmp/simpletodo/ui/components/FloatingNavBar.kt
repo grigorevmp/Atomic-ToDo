@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -32,6 +33,7 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.kyant.backdrop.backdrops.LayerBackdrop
 import com.kyant.backdrop.drawBackdrop
@@ -42,9 +44,10 @@ import org.jetbrains.compose.resources.stringResource
 import simpletodo.composeapp.generated.resources.Res
 import simpletodo.composeapp.generated.resources.nav_home
 import simpletodo.composeapp.generated.resources.nav_notes
+import simpletodo.composeapp.generated.resources.nav_projects
 import simpletodo.composeapp.generated.resources.nav_settings
 
-enum class AppTab { HOME, NOTES, SETTINGS }
+enum class AppTab { HOME, NOTES, PROJECTS, SETTINGS }
 
 data class CreateAction(
     val id: String,
@@ -58,6 +61,7 @@ data class CreateAction(
 fun FloatingNavBar(
     tab: AppTab,
     onTab: (AppTab) -> Unit,
+    visibleTabs: List<AppTab>,
     createActions: List<CreateAction>,
     backdrop: LayerBackdrop,
     enableEffects: Boolean = true,
@@ -97,7 +101,7 @@ fun FloatingNavBar(
     ) {
         Box(
             Modifier
-                .height(72.dp)
+                .height(64.dp)
         ) {
             Box(
                 Modifier
@@ -128,54 +132,78 @@ fun FloatingNavBar(
                 Modifier
                     .wrapContentWidth()
                     .align(Alignment.Center)
-                    .padding(horizontal = 8.dp, vertical = 6.dp)
+                    .padding(horizontal = 6.dp, vertical = 6.dp)
                     .animateContentSize(animationSpec = spring(dampingRatio = 0.85f, stiffness = 520f)),
-                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                NavButton(
-                    selected = tab == AppTab.HOME,
-                    label = stringResource(Res.string.nav_home),
-                    onClick = { onTab(AppTab.HOME) },
-                    icon = {
-                        Icon(
-                            HomeIcon,
-                            contentDescription = stringResource(Res.string.nav_home),
-                            tint = if (tab == AppTab.HOME) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.padding(vertical = 12.dp)
-                        )
-                    }
-                )
+                if (AppTab.HOME in visibleTabs) {
+                    NavButton(
+                        selected = tab == AppTab.HOME,
+                        label = stringResource(Res.string.nav_home),
+                        onClick = { onTab(AppTab.HOME) },
+                        iconSize = 24.dp,
+                        icon = {
+                            Icon(
+                                HomeIcon,
+                                contentDescription = stringResource(Res.string.nav_home),
+                                tint = if (tab == AppTab.HOME) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier
+                            )
+                        }
+                    )
+                }
 
-                NavButton(
-                    selected = tab == AppTab.NOTES,
-                    label = stringResource(Res.string.nav_notes),
-                    onClick = { onTab(AppTab.NOTES) },
-                    icon = {
-                        Icon(
-                            NotesIcon,
-                            contentDescription = stringResource(Res.string.nav_notes),
-                            tint = if (tab == AppTab.NOTES) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.padding(vertical = 12.dp)
-                        )
-                    }
-                )
+                if (AppTab.NOTES in visibleTabs) {
+                    NavButton(
+                        selected = tab == AppTab.NOTES,
+                        label = stringResource(Res.string.nav_notes),
+                        onClick = { onTab(AppTab.NOTES) },
+                        iconSize = 24.dp,
+                        icon = {
+                            Icon(
+                                NotesIcon,
+                                contentDescription = stringResource(Res.string.nav_notes),
+                                tint = if (tab == AppTab.NOTES) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier
+                            )
+                        }
+                    )
+                }
+
+                if (AppTab.PROJECTS in visibleTabs) {
+                    NavButton(
+                        selected = tab == AppTab.PROJECTS,
+                        label = stringResource(Res.string.nav_projects),
+                        onClick = { onTab(AppTab.PROJECTS) },
+                        iconSize = 24.dp,
+                        icon = {
+                            PlatformIcon(
+                                id = AppIconId.Projects,
+                                contentDescription = stringResource(Res.string.nav_projects),
+                                tint = if (tab == AppTab.PROJECTS) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier
+                            )
+                        }
+                    )
+                }
 
                 NavButton(
                     selected = tab == AppTab.SETTINGS,
                     label = stringResource(Res.string.nav_settings),
                     onClick = { onTab(AppTab.SETTINGS) },
+                    iconSize = 24.dp,
                     icon = {
                         Icon(
                             SettingsIcon,
                             contentDescription = stringResource(Res.string.nav_settings),
                             tint = if (tab == AppTab.SETTINGS) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.padding(vertical = 12.dp)
+                            modifier = Modifier
                         )
                     }
                 )
 
-                createActions.forEach { action ->
+                createActions.take(1).forEach { action ->
                     AnimatedVisibility(
                         visible = createActions.isNotEmpty(),
                         enter = scaleIn(animationSpec = tween(durationMillis = 200)),
@@ -194,6 +222,7 @@ private fun NavButton(
     selected: Boolean,
     label: String,
     onClick: () -> Unit,
+    iconSize: Dp = 24.dp,
     icon: @Composable () -> Unit
 ) {
     val active by animateFloatAsState(
@@ -202,7 +231,6 @@ private fun NavButton(
         label = "nav-active"
     )
     val bg = MaterialTheme.colorScheme.primary.copy(alpha = 0.14f * active)
-    val fg = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
     val scale = 0.98f + 0.02f * active
 
     Surface(
@@ -210,21 +238,14 @@ private fun NavButton(
         shape = RoundedCornerShape(48.dp),
         color = bg,
         modifier = Modifier
-            .width(72.dp)
+            .width(56.dp)
             .graphicsLayer(scaleX = scale, scaleY = scale)
     ) {
         Column(
-            Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+            Modifier.padding(horizontal = 10.dp, vertical = 8.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            icon()
-//            Spacer(Modifier.height(4.dp))
-//            Text(
-//                label,
-//                color = fg,
-//                style = MaterialTheme.typography.labelLarge,
-//                maxLines = 1
-//            )
+            Box(Modifier.width(iconSize).height(iconSize), contentAlignment = Alignment.Center) { icon() }
         }
     }
 }
@@ -235,24 +256,18 @@ private fun CreateActionButton(action: CreateAction) {
         onClick = action.onClick,
         shape = RoundedCornerShape(48.dp),
         color = MaterialTheme.colorScheme.primary,
-        modifier = Modifier.width(72.dp)
+        modifier = Modifier.width(56.dp)
     ) {
         Column(
-            Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+            Modifier.padding(horizontal = 10.dp, vertical = 8.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Icon(
                 action.icon,
                 contentDescription = action.contentDescription,
                 tint = MaterialTheme.colorScheme.onPrimary,
-                modifier = Modifier.padding(vertical = 12.dp)
+                modifier = Modifier.size(28.dp)
             )
-//            Spacer(Modifier.height(4.dp))
-//            Text(
-//                action.label,
-//                color = MaterialTheme.colorScheme.onPrimary,
-//                style = MaterialTheme.typography.labelLarge
-//            )
         }
     }
 }

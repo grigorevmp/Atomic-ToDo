@@ -15,6 +15,7 @@ actual fun PlatformIcon(
     val imageVector = when (id) {
         AppIconId.Home -> HomeIcon
         AppIconId.Notes -> NotesIcon
+        AppIconId.Projects -> ProjectsIcon
         AppIconId.Settings -> SettingsIcon
         AppIconId.Filter -> FilterIcon
         AppIconId.Tag -> TagIcon

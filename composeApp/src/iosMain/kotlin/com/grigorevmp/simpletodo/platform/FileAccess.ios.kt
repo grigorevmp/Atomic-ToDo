@@ -16,3 +16,10 @@ actual fun rememberFileImportLauncher(
 ): FileImportLauncher {
     return FileImportLauncher { onResult(null) }
 }
+
+@Composable
+actual fun rememberFilePickLauncher(
+    onResult: (PickedFile?) -> Unit
+): FilePickLauncher {
+    return FilePickLauncher { onResult(null) }
+}

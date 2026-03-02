@@ -7,6 +7,7 @@ import androidx.compose.ui.graphics.Color
 enum class AppIconId {
     Home,
     Notes,
+    Projects,
     Settings,
     Filter,
     Tag,

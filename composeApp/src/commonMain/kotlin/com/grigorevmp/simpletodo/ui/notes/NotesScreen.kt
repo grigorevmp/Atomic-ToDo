@@ -107,6 +107,7 @@ import simpletodo.composeapp.generated.resources.notes_favorites_title
 import simpletodo.composeapp.generated.resources.notes_count
 import simpletodo.composeapp.generated.resources.notes_expand_cd
 import simpletodo.composeapp.generated.resources.notes_collapse_cd
+import simpletodo.composeapp.generated.resources.nav_projects
 
 @Composable
 fun NotesScreen(
@@ -115,12 +116,14 @@ fun NotesScreen(
     onCreateNoteHandled: () -> Unit,
     openNoteId: String?,
     onOpenNoteHandled: () -> Unit,
-    onEditorVisibleChange: (Boolean) -> Unit = {}
+    onEditorVisibleChange: (Boolean) -> Unit = {},
+    onBackFromRoot: () -> Unit = {}
 ) {
     val tasks by repo.tasks.collectAsState()
     val notes by repo.notes.collectAsState()
     val links by repo.taskNoteLinks.collectAsState()
     val folders by repo.noteFolders.collectAsState()
+    val projects by repo.projects.collectAsState()
     val prefs by repo.prefs.collectAsState()
     val tasksById = remember(tasks) { tasks.associateBy { it.id } }
     val linkedTasksByNote = remember(links, tasksById) {
@@ -175,17 +178,18 @@ fun NotesScreen(
     }
     val noteCounts = remember(notes) { notes.groupingBy { it.folderId }.eachCount() }
     val folderCounts = remember(folders) { folders.groupingBy { it.parentId }.eachCount() }
+    val projectByFolderId = remember(projects) { projects.associateBy { it.notesFolderId } }
     val backgroundColor = MaterialTheme.colorScheme.background
     val navigateBack: () -> Unit = {
         val parent = path.dropLast(1).lastOrNull()?.id
         currentFolderId = parent
     }
 
-    PlatformBackHandler(enabled = showEditor || currentFolderId != null) {
-        if (showEditor) {
-            showEditor = false
-        } else {
+    PlatformBackHandler(enabled = !showEditor) {
+        if (currentFolderId != null) {
             navigateBack()
+        } else {
+            onBackFromRoot()
         }
     }
 
@@ -315,6 +319,7 @@ fun NotesScreen(
                                 when (item) {
                                     is NotesListItem.FolderItem -> FolderRow(
                                         folder = item.folder,
+                                        isProjectFolder = projectByFolderId[item.folder.id] != null,
                                         noteCount = noteCounts[item.folder.id] ?: 0,
                                         folderCount = folderCounts[item.folder.id] ?: 0,
                                         onOpen = { currentFolderId = item.folder.id },
@@ -386,6 +391,7 @@ fun NotesScreen(
     }
 
     folderAction?.let { folder ->
+        val linkedProject = projectByFolderId[folder.id]
         AlertDialog(
             onDismissRequest = { folderAction = null },
             title = { Text(stringResource(Res.string.notes_edit_folder_title)) },
@@ -408,13 +414,19 @@ fun NotesScreen(
                 ) { Text(stringResource(Res.string.notes_save)) }
             },
             dismissButton = {
-                TextButton(
-                    onClick = {
-                        showDeleteFolder = true
-                        deleteFolderId = folder.id
-                        folderAction = null
+                if (linkedProject == null) {
+                    TextButton(
+                        onClick = {
+                            showDeleteFolder = true
+                            deleteFolderId = folder.id
+                            folderAction = null
+                        }
+                    ) { Text(stringResource(Res.string.notes_delete)) }
+                } else {
+                    TextButton(onClick = { folderAction = null }) {
+                        Text(stringResource(Res.string.notes_cancel))
                     }
-                ) { Text(stringResource(Res.string.notes_delete)) }
+                }
             }
         )
     }
@@ -480,6 +492,7 @@ private fun NotesTopBar(path: List<NoteFolder>, onSort: () -> Unit) {
 @Composable
 private fun FolderRow(
     folder: NoteFolder,
+    isProjectFolder: Boolean,
     noteCount: Int,
     folderCount: Int,
     onOpen: () -> Unit,
@@ -496,12 +509,21 @@ private fun FolderRow(
                 .padding(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Icon(
-                FolderIcon,
-                contentDescription = stringResource(Res.string.notes_folder_cd),
-                tint = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.size(22.dp)
-            )
+            if (isProjectFolder) {
+                PlatformIcon(
+                    id = AppIconId.Projects,
+                    contentDescription = stringResource(Res.string.nav_projects),
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(22.dp)
+                )
+            } else {
+                Icon(
+                    FolderIcon,
+                    contentDescription = stringResource(Res.string.notes_folder_cd),
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(22.dp)
+                )
+            }
             Spacer(Modifier.width(12.dp))
             Column(Modifier.weight(1f)) {
                 Text(folder.name, style = MaterialTheme.typography.titleMedium)

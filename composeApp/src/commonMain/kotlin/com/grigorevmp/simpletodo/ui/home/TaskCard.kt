@@ -15,6 +15,8 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -26,6 +28,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -58,19 +61,28 @@ import org.jetbrains.compose.resources.stringResource
 import simpletodo.composeapp.generated.resources.Res
 import simpletodo.composeapp.generated.resources.home_subtasks
 import simpletodo.composeapp.generated.resources.task_deadline_prefix
+import simpletodo.composeapp.generated.resources.task_deadline_overdue
+import simpletodo.composeapp.generated.resources.task_deadline_today
+import simpletodo.composeapp.generated.resources.task_deadline_tomorrow
+import simpletodo.composeapp.generated.resources.task_deadline_in_days
+import simpletodo.composeapp.generated.resources.task_deadline_soon
 import simpletodo.composeapp.generated.resources.task_delete
 import simpletodo.composeapp.generated.resources.task_edit
+import simpletodo.composeapp.generated.resources.task_move_to_project
 import simpletodo.composeapp.generated.resources.task_pin
 import simpletodo.composeapp.generated.resources.task_pinned
+import simpletodo.composeapp.generated.resources.task_remove_from_project
 import simpletodo.composeapp.generated.resources.task_remaining_subs
 import simpletodo.composeapp.generated.resources.task_unpin
 import kotlin.math.abs
 import kotlin.math.roundToInt
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun TaskCard(
     task: TodoTask,
     tagLabel: String?,
+    projectLabel: String? = null,
     noteCount: Int,
     onOpenNotes: () -> Unit,
     onToggleDone: () -> Unit,
@@ -79,6 +91,7 @@ fun TaskCard(
     onEdit: () -> Unit,
     onTogglePinned: () -> Unit,
     onDelete: () -> Unit,
+    onMoveProject: () -> Unit = {},
     onClearCompleted: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -200,69 +213,97 @@ fun TaskCard(
                     task.estimateHours?.let { InfoChip(formatHours(it)) }
                 }
 
-                Row(
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    if (!tagLabel.isNullOrBlank()) {
-                        Surface(
-                            shape = MaterialTheme.shapes.small,
-                            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
-                        ) {
-                            Row(
-                                Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                                verticalAlignment = Alignment.CenterVertically
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    FlowRow(
+                        modifier = Modifier
+                            .weight(1f),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        if (!projectLabel.isNullOrBlank()) {
+                            Surface(
+                                shape = MaterialTheme.shapes.small,
+                                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
                             ) {
-                                PlatformIcon(
-                                    id = AppIconId.Tag,
-                                    contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.primary
-                                )
-                                Spacer(Modifier.width(6.dp))
-                                Text(
-                                    tagLabel,
-                                    style = MaterialTheme.typography.labelMedium,
-                                    color = MaterialTheme.colorScheme.primary
-                                )
+                                Row(
+                                    Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    PlatformIcon(
+                                        id = AppIconId.Projects,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.primary
+                                    )
+                                    Spacer(Modifier.width(6.dp))
+                                    Text(
+                                        projectLabel,
+                                        style = MaterialTheme.typography.labelMedium,
+                                        color = MaterialTheme.colorScheme.primary
+                                    )
+                                }
                             }
                         }
-                    }
 
-                    if (noteCount > 0) {
-                        val noteLabel = if (noteCount == 1) "Note" else "Notes"
-                        Surface(
-                            shape = MaterialTheme.shapes.small,
-                            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
-                            modifier = Modifier
-                                .padding(start = 8.dp)
-                                .clickable { onOpenNotes() }
-                        ) {
-                            Row(
-                                Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                                verticalAlignment = Alignment.CenterVertically
+                        if (!tagLabel.isNullOrBlank()) {
+                            Surface(
+                                shape = MaterialTheme.shapes.small,
+                                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
+                                modifier = Modifier
                             ) {
-                                Icon(
-                                    NoteIcon,
-                                    contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.primary
-                                )
-                                Spacer(Modifier.width(6.dp))
-                                Text(
-                                    if (noteCount == 1) noteLabel else "$noteLabel $noteCount",
-                                    style = MaterialTheme.typography.labelMedium,
-                                    color = MaterialTheme.colorScheme.primary
-                                )
+                                Row(
+                                    Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    PlatformIcon(
+                                        id = AppIconId.Tag,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.primary
+                                    )
+                                    Spacer(Modifier.width(6.dp))
+                                    Text(
+                                        tagLabel,
+                                        style = MaterialTheme.typography.labelMedium,
+                                        color = MaterialTheme.colorScheme.primary
+                                    )
+                                }
+                            }
+                        }
+
+                        if (noteCount > 0) {
+                            val noteLabel = if (noteCount == 1) "Note" else "Notes"
+                            Surface(
+                                shape = MaterialTheme.shapes.small,
+                                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
+                                modifier = Modifier
+                                    .clickable { onOpenNotes() }
+                            ) {
+                                Row(
+                                    Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Icon(
+                                        NoteIcon,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.primary
+                                    )
+                                    Spacer(Modifier.width(6.dp))
+                                    Text(
+                                        if (noteCount == 1) noteLabel else "$noteLabel $noteCount",
+                                        style = MaterialTheme.typography.labelMedium,
+                                        color = MaterialTheme.colorScheme.primary
+                                    )
+                                }
                             }
                         }
                     }
 
                     if (task.subtasks.isNotEmpty()) {
-                        Spacer(Modifier.weight(1f))
+                        Spacer(Modifier.width(8.dp))
                         Row(
                             modifier = Modifier
                                 .clip(MaterialTheme.shapes.small)
                                 .clickable { subtasksExpanded = !subtasksExpanded }
                                 .padding(vertical = 8.dp, horizontal = 6.dp),
-                            horizontalArrangement = Arrangement.End,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Icon(
@@ -274,10 +315,10 @@ fun TaskCard(
                             Text(
                                 text = subLabel,
                                 style = MaterialTheme.typography.labelLarge,
-                                color = MaterialTheme.colorScheme.primary
+                                color = MaterialTheme.colorScheme.primary,
+                                maxLines = 1
                             )
                         }
-                        Spacer(Modifier.width(6.dp))
                     }
                 }
 
@@ -318,6 +359,23 @@ fun TaskCard(
                         onClick = {
                             showActions = false
                             onTogglePinned()
+                        }
+                    )
+                    DropdownMenuItem(
+                        text = {
+                            Text(
+                                if (projectLabel.isNullOrBlank()) {
+                                    stringResource(Res.string.task_move_to_project)
+                                } else {
+                                    stringResource(Res.string.task_remove_from_project)
+                                },
+                                style = MaterialTheme.typography.titleMedium
+                            )
+                        },
+                        leadingIcon = { PlatformIcon(id = AppIconId.Projects, contentDescription = null, tint = LocalContentColor.current) },
+                        onClick = {
+                            showActions = false
+                            onMoveProject()
                         }
                     )
                     DropdownMenuItem(
@@ -479,14 +537,15 @@ private fun daysUntil(deadline: Instant): Int {
     return if (days < 0) 0 else days
 }
 
+@Composable
 private fun deadlineLabel(deadline: Instant): String {
     val now = nowInstant()
-    if (deadline < now) return "Дедлайн истек"
+    if (deadline < now) return stringResource(Res.string.task_deadline_overdue)
     return when (val days = daysUntil(deadline)) {
-        0 -> "Дедлайн сегодня"
-        1 -> "Дедлайн через 1 день"
-        in 2..4 -> "Дедлайн через $days дня"
-        else -> "Дедлайн скоро"
+        0 -> stringResource(Res.string.task_deadline_today)
+        1 -> stringResource(Res.string.task_deadline_tomorrow)
+        in 2..4 -> stringResource(Res.string.task_deadline_in_days, days.toString())
+        else -> stringResource(Res.string.task_deadline_soon)
     }
 }
 

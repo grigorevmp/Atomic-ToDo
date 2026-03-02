@@ -70,6 +70,35 @@ actual val NotesIcon: ImageVector = ImageVector.Builder(
     }
 }.build()
 
+actual val ProjectsIcon: ImageVector = ImageVector.Builder(
+    name = "Projects",
+    defaultWidth = 24.dp,
+    defaultHeight = 24.dp,
+    viewportWidth = 24f,
+    viewportHeight = 24f
+).apply {
+    path(
+        fill = SolidColor(Color.Transparent),
+        stroke = SolidColor(Color.Black),
+        strokeLineWidth = 1.8f,
+        strokeLineCap = StrokeCap.Round,
+        strokeLineJoin = StrokeJoin.Round,
+        pathFillType = PathFillType.NonZero
+    ) {
+        moveTo(4.5f, 7f)
+        lineTo(10.5f, 7f)
+        lineTo(12f, 9f)
+        lineTo(19.5f, 9f)
+        lineTo(19.5f, 17.5f)
+        lineTo(4.5f, 17.5f)
+        close()
+        moveTo(9f, 12f)
+        lineTo(15.5f, 12f)
+        moveTo(9f, 14.8f)
+        lineTo(13.5f, 14.8f)
+    }
+}.build()
+
 actual val SettingsIcon: ImageVector = ImageVector.Builder(
     name = "Settings",
     defaultWidth = 24.dp,

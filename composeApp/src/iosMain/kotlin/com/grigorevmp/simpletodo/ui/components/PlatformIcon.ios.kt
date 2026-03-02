@@ -4,6 +4,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import org.jetbrains.compose.resources.ExperimentalResourceApi
 import org.jetbrains.compose.resources.painterResource
 import simpletodo.composeapp.generated.resources.Res
@@ -25,6 +26,7 @@ actual fun PlatformIcon(
     val painter = when (id) {
         AppIconId.Home -> painterResource(Res.drawable.home)
         AppIconId.Notes -> painterResource(Res.drawable.notes)
+        AppIconId.Projects -> rememberVectorPainter(ProjectsIcon)
         AppIconId.Settings -> painterResource(Res.drawable.settings)
         AppIconId.Filter -> painterResource(Res.drawable.filter)
         AppIconId.Tag -> painterResource(Res.drawable.tag)

@@ -5,6 +5,8 @@ import com.grigorevmp.simpletodo.model.Importance
 import com.grigorevmp.simpletodo.model.Note
 import com.grigorevmp.simpletodo.model.NoteFolder
 import com.grigorevmp.simpletodo.model.NoteSortConfig
+import com.grigorevmp.simpletodo.model.Project
+import com.grigorevmp.simpletodo.model.ProjectStatus
 import com.grigorevmp.simpletodo.model.SortConfig
 import com.grigorevmp.simpletodo.model.SortDir
 import com.grigorevmp.simpletodo.model.SortField
@@ -40,6 +42,7 @@ class TodoRepository(
         val tasks: List<TodoTask>,
         val notes: List<Note>,
         val folders: List<NoteFolder>,
+        val projects: List<Project> = emptyList(),
         val links: List<TaskNoteLink>,
         val prefs: AppPrefs
     )
@@ -58,6 +61,7 @@ class TodoRepository(
     private val notesKey = "notes_json_v1"
     private val foldersKey = "note_folders_json_v1"
     private val linksKey = "task_note_links_json_v1"
+    private val projectsKey = "projects_json_v1"
     private val prefsKey = "prefs_json_v1"
 
     private val _tasks = MutableStateFlow(loadTasks())
@@ -71,6 +75,9 @@ class TodoRepository(
 
     private val _noteFolders = MutableStateFlow(loadFolders())
     val noteFolders: StateFlow<List<NoteFolder>> = _noteFolders
+
+    private val _projects = MutableStateFlow(loadProjects())
+    val projects: StateFlow<List<Project>> = _projects
 
     private val _prefs = MutableStateFlow(loadPrefs())
     val prefs: StateFlow<AppPrefs> = _prefs
@@ -126,12 +133,22 @@ class TodoRepository(
         return migrated
     }
 
+    private fun loadProjects(): List<Project> {
+        val raw = settings.getStringOrNull(projectsKey) ?: return emptyList()
+        return runCatching { json.decodeFromString(ListSerializer(Project.serializer()), raw) }
+            .getOrElse { emptyList() }
+    }
+
     private fun saveFolders(list: List<NoteFolder>) {
         settings.putString(foldersKey, json.encodeToString(ListSerializer(NoteFolder.serializer()), list))
     }
 
     private fun saveLinks(list: List<TaskNoteLink>) {
         settings.putString(linksKey, json.encodeToString(ListSerializer(TaskNoteLink.serializer()), list))
+    }
+
+    private fun saveProjects(list: List<Project>) {
+        settings.putString(projectsKey, json.encodeToString(ListSerializer(Project.serializer()), list))
     }
 
     private fun loadPrefs(): AppPrefs {
@@ -154,15 +171,25 @@ class TodoRepository(
         deadline: kotlinx.datetime.Instant?,
         importance: Importance,
         tagId: String?,
-        subtasks: List<Subtask>
+        subtasks: List<Subtask>,
+        projectId: String? = null,
+        projectStatusId: String? = null
     ) {
         mutex.withLock {
+            val project = projectId?.let { id -> _projects.value.firstOrNull { it.id == id } }
+            val statusId = if (project != null && project.statuses.any { it.id == projectStatusId }) {
+                projectStatusId
+            } else {
+                null
+            }
             val now = nowInstant()
             val task = TodoTask(
                 id = newId("task"),
                 title = title.trim(),
                 plan = plan.trim(),
                 noteId = noteId,
+                projectId = project?.id,
+                projectStatusId = statusId,
                 subtasks = subtasks,
                 createdAt = now,
                 plannedAt = plannedAt,
@@ -317,6 +344,16 @@ class TodoRepository(
         }
     }
 
+    suspend fun moveNoteToFolder(noteId: String, folderId: String?) {
+        mutex.withLock {
+            val updated = _notes.value.map { n ->
+                if (n.id == noteId) n.copy(folderId = folderId, updatedAt = nowInstant()) else n
+            }
+            _notes.value = updated
+            saveNotes(updated)
+        }
+    }
+
     suspend fun addFolder(name: String, parentId: String?) {
         mutex.withLock {
             val trimmed = name.trim()
@@ -397,6 +434,14 @@ class TodoRepository(
     suspend fun setShowCompletedTasks(show: Boolean) {
         mutex.withLock {
             val p = _prefs.value.copy(showCompletedTasks = show)
+            _prefs.value = p
+            savePrefs(p)
+        }
+    }
+
+    suspend fun setShowCompletedProjectColumn(show: Boolean) {
+        mutex.withLock {
+            val p = _prefs.value.copy(showCompletedProjectColumn = show)
             _prefs.value = p
             savePrefs(p)
         }
@@ -516,11 +561,29 @@ class TodoRepository(
         }
     }
 
+    suspend fun setSectionTabsVisibility(
+        showHome: Boolean,
+        showNotes: Boolean,
+        showProjects: Boolean
+    ) {
+        mutex.withLock {
+            if (!showHome && !showNotes && !showProjects) return
+            val p = _prefs.value.copy(
+                showHomeTab = showHome,
+                showNotesTab = showNotes,
+                showProjectsTab = showProjects
+            )
+            _prefs.value = p
+            savePrefs(p)
+        }
+    }
+
     suspend fun exportData(): String = mutex.withLock {
         val payload = BackupPayload(
             tasks = _tasks.value,
             notes = _notes.value,
             folders = _noteFolders.value,
+            projects = _projects.value,
             links = _taskNoteLinks.value,
             prefs = _prefs.value
         )
@@ -533,11 +596,13 @@ class TodoRepository(
             _tasks.value = data.tasks
             _notes.value = data.notes
             _noteFolders.value = data.folders
+            _projects.value = data.projects
             _taskNoteLinks.value = data.links
             _prefs.value = data.prefs
             saveTasks(data.tasks)
             saveNotes(data.notes)
             saveFolders(data.folders)
+            saveProjects(data.projects)
             saveLinks(data.links)
             savePrefs(data.prefs)
             rescheduleAllLocked()
@@ -550,11 +615,13 @@ class TodoRepository(
             _tasks.value = emptyList()
             _notes.value = emptyList()
             _noteFolders.value = emptyList()
+            _projects.value = emptyList()
             _taskNoteLinks.value = emptyList()
             _prefs.value = AppPrefs()
             saveTasks(_tasks.value)
             saveNotes(_notes.value)
             saveFolders(_noteFolders.value)
+            saveProjects(_projects.value)
             saveLinks(_taskNoteLinks.value)
             savePrefs(_prefs.value)
         }
@@ -570,6 +637,140 @@ class TodoRepository(
             _tasks.value = updated
             saveTasks(updated)
             removeLinksForTasks(doneIds)
+        }
+    }
+
+    suspend fun addProject(name: String, statuses: List<String>) {
+        mutex.withLock {
+            val trimmed = name.trim()
+            if (trimmed.isEmpty()) return
+
+            val existingNames = _projects.value.map { it.name.lowercase() }.toSet()
+            if (trimmed.lowercase() in existingNames) return
+
+            val now = nowInstant()
+            val folder = NoteFolder(
+                id = newId("folder"),
+                name = trimmed,
+                parentId = null,
+                createdAt = now
+            )
+            val statusModels = statuses
+                .map { it.trim() }
+                .filter { it.isNotEmpty() }
+                .distinctBy { it.lowercase() }
+                .map { statusName -> ProjectStatus(id = newId("pstatus"), name = statusName) }
+            val project = Project(
+                id = newId("project"),
+                name = trimmed,
+                notesFolderId = folder.id,
+                statuses = statusModels,
+                createdAt = now
+            )
+
+            val folders = _noteFolders.value + folder
+            _noteFolders.value = folders
+            saveFolders(folders)
+
+            val projects = _projects.value + project
+            _projects.value = projects
+            saveProjects(projects)
+        }
+    }
+
+    suspend fun updateProject(project: Project) {
+        mutex.withLock {
+            val normalizedStatuses = project.statuses
+                .map { s -> s.copy(name = s.name.trim()) }
+                .filter { it.name.isNotEmpty() }
+                .distinctBy { it.name.lowercase() }
+            val updatedProject = project.copy(
+                name = project.name.trim(),
+                statuses = normalizedStatuses
+            )
+            if (updatedProject.name.isEmpty()) return
+
+            val oldProject = _projects.value.firstOrNull { it.id == updatedProject.id } ?: return
+            val projects = _projects.value.map { current ->
+                if (current.id == updatedProject.id) updatedProject else current
+            }
+            _projects.value = projects
+            saveProjects(projects)
+
+            if (oldProject.name != updatedProject.name) {
+                val folders = _noteFolders.value.map { folder ->
+                    if (folder.id == updatedProject.notesFolderId) {
+                        folder.copy(name = updatedProject.name)
+                    } else {
+                        folder
+                    }
+                }
+                _noteFolders.value = folders
+                saveFolders(folders)
+            }
+
+            val validStatusIds = updatedProject.statuses.map { it.id }.toSet()
+            val tasks = _tasks.value.map { task ->
+                if (task.projectId != updatedProject.id) return@map task
+                if (task.projectStatusId == null || task.projectStatusId in validStatusIds) {
+                    task
+                } else {
+                    task.copy(projectStatusId = null)
+                }
+            }
+            _tasks.value = tasks
+            saveTasks(tasks)
+        }
+    }
+
+    suspend fun deleteProject(projectId: String) {
+        mutex.withLock {
+            if (_projects.value.none { it.id == projectId }) return
+            val projects = _projects.value.filterNot { it.id == projectId }
+            _projects.value = projects
+            saveProjects(projects)
+
+            val tasks = _tasks.value.map { task ->
+                if (task.projectId == projectId) {
+                    task.copy(projectId = null, projectStatusId = null)
+                } else {
+                    task
+                }
+            }
+            _tasks.value = tasks
+            saveTasks(tasks)
+        }
+    }
+
+    suspend fun assignTaskToProject(taskId: String, projectId: String?) {
+        mutex.withLock {
+            val project = projectId?.let { id -> _projects.value.firstOrNull { it.id == id } }
+            val tasks = _tasks.value.map { task ->
+                if (task.id != taskId) return@map task
+                task.copy(
+                    projectId = project?.id,
+                    projectStatusId = null
+                )
+            }
+            _tasks.value = tasks
+            saveTasks(tasks)
+        }
+    }
+
+    suspend fun setTaskProjectStatus(taskId: String, statusId: String?) {
+        mutex.withLock {
+            val task = _tasks.value.firstOrNull { it.id == taskId } ?: return
+            val project = task.projectId?.let { id -> _projects.value.firstOrNull { it.id == id } }
+            val validStatus = if (statusId == null) {
+                null
+            } else {
+                project?.statuses?.firstOrNull { it.id == statusId }?.id
+            }
+            val tasks = _tasks.value.map { current ->
+                if (current.id == taskId) current.copy(projectStatusId = validStatus) else current
+            }
+            _tasks.value = tasks
+            saveTasks(tasks)
         }
     }
 

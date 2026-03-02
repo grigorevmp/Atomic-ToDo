@@ -100,8 +100,10 @@ fun CalendarTab(
     onClearCompleted: () -> Unit,
     showCompleted: Boolean,
     tagName: (String?) -> String?,
+    projectName: (String?) -> String? = { null },
     noteCount: (TodoTask) -> Int,
     onOpenNotes: (TodoTask) -> Unit,
+    onMoveProject: (TodoTask) -> Unit = {},
     dimScroll: Boolean,
     backdrop: LayerBackdrop
 ) {
@@ -231,6 +233,7 @@ fun CalendarTab(
                                         TaskCard(
                                             task = t,
                                             tagLabel = tagName(t.tagId),
+                                            projectLabel = projectName(t.projectId),
                                             noteCount = noteCount(t),
                                             onOpenNotes = { onOpenNotes(t) },
                                             onToggleDone = { onToggleDone(t.id) },
@@ -239,6 +242,7 @@ fun CalendarTab(
                                             onEdit = { onEdit(t) },
                                             onTogglePinned = { onTogglePinned(t.id) },
                                             onDelete = { onDelete(t.id) },
+                                            onMoveProject = { onMoveProject(t) },
                                             onClearCompleted = onClearCompleted
                                         )
                                     }

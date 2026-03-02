@@ -11,6 +11,7 @@ import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
@@ -52,7 +53,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.lerp
@@ -73,12 +73,19 @@ import com.grigorevmp.simpletodo.platform.NotificationPermissionGate
 import com.grigorevmp.simpletodo.platform.isIos
 import com.grigorevmp.simpletodo.platform.rememberFileExportLauncher
 import com.grigorevmp.simpletodo.platform.rememberFileImportLauncher
+import com.grigorevmp.simpletodo.ui.components.AppTab
 import com.grigorevmp.simpletodo.ui.components.FadingScrollEdges
+import com.grigorevmp.simpletodo.ui.components.HomeIcon
+import com.grigorevmp.simpletodo.ui.components.NotesIcon
+import com.grigorevmp.simpletodo.ui.components.ProjectsIcon
 import com.grigorevmp.simpletodo.ui.components.SimpleIcons
 import com.grigorevmp.simpletodo.ui.theme.authorAccentColors
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.stringResource
 import simpletodo.composeapp.generated.resources.Res
+import simpletodo.composeapp.generated.resources.nav_home
+import simpletodo.composeapp.generated.resources.nav_notes
+import simpletodo.composeapp.generated.resources.nav_projects
 import simpletodo.composeapp.generated.resources.settings_about_title
 import simpletodo.composeapp.generated.resources.settings_account_devices
 import simpletodo.composeapp.generated.resources.settings_account_profile
@@ -125,6 +132,8 @@ import simpletodo.composeapp.generated.resources.settings_notifications_title
 import simpletodo.composeapp.generated.resources.settings_pinned_notifications_title
 import simpletodo.composeapp.generated.resources.settings_open
 import simpletodo.composeapp.generated.resources.settings_selected
+import simpletodo.composeapp.generated.resources.settings_sections_desc
+import simpletodo.composeapp.generated.resources.settings_sections_title
 import simpletodo.composeapp.generated.resources.settings_status_badge_beta
 import simpletodo.composeapp.generated.resources.settings_status_badge_local
 import simpletodo.composeapp.generated.resources.settings_status_desc
@@ -220,79 +229,53 @@ fun SettingsScreen(
             }
 
             item {
-                Surface(
-                    shape = MaterialTheme.shapes.large,
-                    tonalElevation = 0.dp,
-                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                SettingsCard(
+                    title = stringResource(Res.string.settings_notifications_title),
+                    description = stringResource(Res.string.settings_notifications_desc),
+                    toggleChecked = prefs.remindersEnabled,
+                    onToggle = { enabled -> scope.launch { repo.setReminders(enabled) } }
                 ) {
-                    Column(
-                        Modifier.fillMaxWidth().padding(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(10.dp)
+                    NotificationPermissionGate(remindersEnabled = prefs.remindersEnabled)
+
+                    Row(
+                        Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Row(
-                            Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                        Text(stringResource(Res.string.settings_notifications_title), style = MaterialTheme.typography.titleMedium)
-                            Switch(
-                                checked = prefs.remindersEnabled,
-                                onCheckedChange = { enabled ->
-                                    scope.launch { repo.setReminders(enabled) }
-                                }
-                            )
-                        }
-
-                        NotificationPermissionGate(remindersEnabled = prefs.remindersEnabled)
-
                         Text(
-                        stringResource(Res.string.settings_notifications_desc),
+                            stringResource(Res.string.settings_pinned_notifications_title),
                             style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.weight(1f).padding(end = 12.dp)
                         )
-                        Row(
-                            Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text(
-                                stringResource(Res.string.settings_pinned_notifications_title),
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                modifier = Modifier.weight(1f).padding(end = 12.dp)
-                            )
-                            Switch(
-                                checked = prefs.pinPinnedInNotifications,
-                                onCheckedChange = { enabled ->
-                                    scope.launch { repo.setPinnedNotifications(enabled) }
-                                }
-                            )
-                        }
-                        OutlinedTextField(
-                            value = leadMinutesText,
-                            onValueChange = { text ->
-                                val cleaned = text.filter { it.isDigit() }
-                                leadMinutesText = cleaned
-                                val value = cleaned.toIntOrNull() ?: return@OutlinedTextField
-                                scope.launch { repo.setLeadMinutes(value) }
-                            },
-                        label = { Text(stringResource(Res.string.settings_lead_time_label)) },
-                            singleLine = true,
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                            modifier = Modifier.fillMaxWidth(),
+                        Switch(
+                            checked = prefs.pinPinnedInNotifications,
+                            onCheckedChange = { enabled ->
+                                scope.launch { repo.setPinnedNotifications(enabled) }
+                            }
                         )
                     }
+                    OutlinedTextField(
+                        value = leadMinutesText,
+                        onValueChange = { text ->
+                            val cleaned = text.filter { it.isDigit() }
+                            leadMinutesText = cleaned
+                            val value = cleaned.toIntOrNull() ?: return@OutlinedTextField
+                            scope.launch { repo.setLeadMinutes(value) }
+                        },
+                        label = { Text(stringResource(Res.string.settings_lead_time_label)) },
+                        singleLine = true,
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        modifier = Modifier.fillMaxWidth(),
+                    )
                 }
             }
 
         item {
-            Surface(shape = MaterialTheme.shapes.large, tonalElevation = 4.dp) {
-                Column(
-                    Modifier.fillMaxWidth().padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(10.dp)
-                ) {
-                    Text(stringResource(Res.string.settings_theme_title), style = MaterialTheme.typography.titleMedium)
-                    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            SettingsCard(
+                title = stringResource(Res.string.settings_theme_title)
+            ) {
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                         Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                             ThemeCard(
                                 title = stringResource(Res.string.settings_theme_system),
@@ -331,119 +314,128 @@ fun SettingsScreen(
                             )
                         }
                     }
-                    SettingToggle(
-                        title = stringResource(Res.string.settings_disable_dark_title),
-                        subtitle = stringResource(Res.string.settings_disable_dark_desc),
-                        checked = prefs.disableDarkTheme,
-                        onToggle = { enabled -> scope.launch { repo.setDisableDarkTheme(enabled) } }
-                    )
-                    if (prefs.themeMode == ThemeMode.AUTHOR) {
-                        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                            authorAccentColors().forEachIndexed { idx, color ->
-                                AccentSwatch(
-                                    color = color,
-                                    selected = prefs.authorAccentIndex == idx,
-                                    onClick = { scope.launch { repo.setAuthorAccent(idx) } }
-                                )
-                            }
-                        }
-                    }
-                    SettingToggle(
-                        title = stringResource(Res.string.settings_dim_scroll_title),
-                        subtitle = stringResource(Res.string.settings_dim_scroll_desc),
-                        checked = prefs.dimScroll,
-                        onToggle = { enabled -> scope.launch { repo.setDimScroll(enabled) } }
-                    )
-                    SettingToggle(
-                        title = stringResource(Res.string.settings_liquid_glass_title),
-                        subtitle = stringResource(Res.string.settings_liquid_glass_desc),
-                        checked = prefs.liquidGlass,
-                        onToggle = { enabled -> scope.launch { repo.setLiquidGlass(enabled) } }
-                    )
-                }
-            }
-        }
-
-        item {
-            Surface(shape = MaterialTheme.shapes.large, tonalElevation = 4.dp) {
-                Column(
-                    Modifier.fillMaxWidth().padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(10.dp)
-                ) {
-                    Text(stringResource(Res.string.settings_language_title), style = MaterialTheme.typography.titleMedium)
+                SettingToggle(
+                    title = stringResource(Res.string.settings_disable_dark_title),
+                    subtitle = stringResource(Res.string.settings_disable_dark_desc),
+                    checked = prefs.disableDarkTheme,
+                    onToggle = { enabled -> scope.launch { repo.setDisableDarkTheme(enabled) } }
+                )
+                if (prefs.themeMode == ThemeMode.AUTHOR) {
                     Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                        FilterChip(
-                            selected = prefs.language == AppLanguage.SYSTEM,
-                            onClick = { scope.launch { repo.setLanguage(AppLanguage.SYSTEM) } },
-                            label = { Text(stringResource(Res.string.settings_language_system)) }
-                        )
-                        FilterChip(
-                            selected = prefs.language == AppLanguage.EN,
-                            onClick = { scope.launch { repo.setLanguage(AppLanguage.EN) } },
-                            label = { Text(stringResource(Res.string.settings_language_en)) }
-                        )
-                        FilterChip(
-                            selected = prefs.language == AppLanguage.RU,
-                            onClick = { scope.launch { repo.setLanguage(AppLanguage.RU) } },
-                            label = { Text(stringResource(Res.string.settings_language_ru)) }
-                        )
-                    }
-                }
-            }
-        }
-
-        item {
-            Surface(shape = MaterialTheme.shapes.large, tonalElevation = 4.dp) {
-                Column(
-                    Modifier.fillMaxWidth().padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(10.dp)
-                ) {
-                    Row(
-                        Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(stringResource(Res.string.settings_tags_title), style = MaterialTheme.typography.titleMedium)
-                        TextButton(onClick = { showTagsDialog = true }) { Text(stringResource(Res.string.settings_tags_manage)) }
-                    }
-                    Row(
-                        Modifier
-                            .fillMaxWidth()
-                            .horizontalScroll(rememberScrollState()),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        prefs.tags.take(8).forEach { tag ->
-                            TagChip(tag = tag)
-                        }
-                        if (prefs.tags.size > 8) {
-                            Text(
-                                stringResource(Res.string.settings_tags_more, (prefs.tags.size - 8).toString()),
-                                style = MaterialTheme.typography.labelLarge,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 6.dp)
+                        authorAccentColors().forEachIndexed { idx, color ->
+                            AccentSwatch(
+                                color = color,
+                                selected = prefs.authorAccentIndex == idx,
+                                onClick = { scope.launch { repo.setAuthorAccent(idx) } }
                             )
                         }
                     }
-                    Text(
-                        stringResource(Res.string.settings_tags_desc),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                }
+                SettingToggle(
+                    title = stringResource(Res.string.settings_dim_scroll_title),
+                    subtitle = stringResource(Res.string.settings_dim_scroll_desc),
+                    checked = prefs.dimScroll,
+                    onToggle = { enabled -> scope.launch { repo.setDimScroll(enabled) } }
+                )
+                SettingToggle(
+                    title = stringResource(Res.string.settings_liquid_glass_title),
+                    subtitle = stringResource(Res.string.settings_liquid_glass_desc),
+                    checked = prefs.liquidGlass,
+                    onToggle = { enabled -> scope.launch { repo.setLiquidGlass(enabled) } }
+                )
+            }
+        }
+
+        item {
+            SettingsCard(title = stringResource(Res.string.settings_language_title)) {
+                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    FilterChip(
+                        selected = prefs.language == AppLanguage.SYSTEM,
+                        onClick = { scope.launch { repo.setLanguage(AppLanguage.SYSTEM) } },
+                        label = { Text(stringResource(Res.string.settings_language_system)) }
+                    )
+                    FilterChip(
+                        selected = prefs.language == AppLanguage.EN,
+                        onClick = { scope.launch { repo.setLanguage(AppLanguage.EN) } },
+                        label = { Text(stringResource(Res.string.settings_language_en)) }
+                    )
+                    FilterChip(
+                        selected = prefs.language == AppLanguage.RU,
+                        onClick = { scope.launch { repo.setLanguage(AppLanguage.RU) } },
+                        label = { Text(stringResource(Res.string.settings_language_ru)) }
                     )
                 }
             }
         }
 
         item {
-            Surface(shape = MaterialTheme.shapes.large, tonalElevation = 4.dp) {
-                Column(
-                    Modifier.fillMaxWidth().padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(10.dp)
+            SettingsCard(
+                title = stringResource(Res.string.settings_sections_title),
+                description = stringResource(Res.string.settings_sections_desc)
+            ) {
+                val onToggleTab: (AppTab) -> Unit = { target ->
+                    val showHome = if (target == AppTab.HOME) !prefs.showHomeTab else prefs.showHomeTab
+                    val showNotes = if (target == AppTab.NOTES) !prefs.showNotesTab else prefs.showNotesTab
+                    val showProjects = if (target == AppTab.PROJECTS) !prefs.showProjectsTab else prefs.showProjectsTab
+                    if (showHome || showNotes || showProjects) {
+                        scope.launch {
+                            repo.setSectionTabsVisibility(
+                                showHome = showHome,
+                                showNotes = showNotes,
+                                showProjects = showProjects
+                            )
+                        }
+                    }
+                }
+                SectionVisibilityBar(
+                    showHome = prefs.showHomeTab,
+                    showNotes = prefs.showNotesTab,
+                    showProjects = prefs.showProjectsTab,
+                    onToggleTab = onToggleTab
+                )
+            }
+        }
+
+        item {
+            SettingsCard(
+                title = stringResource(Res.string.settings_tags_title),
+                description = stringResource(Res.string.settings_tags_desc)
+            ) {
+                Row(
+                    Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.End
                 ) {
-                    Text(stringResource(Res.string.settings_data_title), style = MaterialTheme.typography.titleMedium)
-                    Row(
-                        Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(10.dp)
-                    ) {
+                    TextButton(onClick = { showTagsDialog = true }) {
+                        Text(stringResource(Res.string.settings_tags_manage))
+                    }
+                }
+                Row(
+                    Modifier
+                        .fillMaxWidth()
+                        .horizontalScroll(rememberScrollState()),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    prefs.tags.take(8).forEach { tag ->
+                        TagChip(tag = tag)
+                    }
+                    if (prefs.tags.size > 8) {
+                        Text(
+                            stringResource(Res.string.settings_tags_more, (prefs.tags.size - 8).toString()),
+                            style = MaterialTheme.typography.labelLarge,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 6.dp)
+                        )
+                    }
+                }
+            }
+        }
+
+        item {
+            SettingsCard(title = stringResource(Res.string.settings_data_title)) {
+                Row(
+                    Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
                         DataActionButton(
                             text = stringResource(Res.string.settings_data_export),
                             icon = SimpleIcons.ArrowUp,
@@ -477,24 +469,27 @@ fun SettingsScreen(
                                 }
                             }
                         )
-                    }
-                    if (useFileImportExport && exportFailed) {
-                        Text(
-                            stringResource(Res.string.settings_export_error),
-                            color = MaterialTheme.colorScheme.error,
-                            style = MaterialTheme.typography.bodySmall
-                        )
-                    }
-                    if (useFileImportExport && importError) {
-                        Text(
-                            stringResource(Res.string.settings_import_error),
-                            color = MaterialTheme.colorScheme.error,
-                            style = MaterialTheme.typography.bodySmall
-                        )
-                    }
-                    TextButton(onClick = { showDeleteDataDialog = true }) {
-                        Text(stringResource(Res.string.settings_data_delete), color = MaterialTheme.colorScheme.error)
-                    }
+                }
+                DataActionButton(
+                    text = stringResource(Res.string.settings_data_delete),
+                    icon = SimpleIcons.Delete,
+                    tone = DataActionTone.Danger,
+                    modifier = Modifier.fillMaxWidth(),
+                    onClick = { showDeleteDataDialog = true }
+                )
+                if (useFileImportExport && exportFailed) {
+                    Text(
+                        stringResource(Res.string.settings_export_error),
+                        color = MaterialTheme.colorScheme.error,
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                }
+                if (useFileImportExport && importError) {
+                    Text(
+                        stringResource(Res.string.settings_import_error),
+                        color = MaterialTheme.colorScheme.error,
+                        style = MaterialTheme.typography.bodySmall
+                    )
                 }
             }
         }
@@ -517,11 +512,13 @@ fun SettingsScreen(
                 Column(
                     Modifier
                         .fillMaxWidth()
-                        .heightIn(max = 320.dp)
+                        .heightIn(min = 220.dp, max = 420.dp)
                         .verticalScroll(rememberScrollState()),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    Text(CHANGELOG, style = MaterialTheme.typography.bodyMedium)
+                    CHANGELOG_ENTRIES.forEach { entry ->
+                        ChangelogCard(entry = entry)
+                    }
                 }
             },
             confirmButton = {
@@ -806,6 +803,160 @@ private fun SettingToggle(
 }
 
 @Composable
+private fun SectionVisibilityBar(
+    showHome: Boolean,
+    showNotes: Boolean,
+    showProjects: Boolean,
+    onToggleTab: (AppTab) -> Unit
+) {
+    val enabledCount = listOf(showHome, showNotes, showProjects).count { it }
+    Surface(
+        shape = MaterialTheme.shapes.large,
+        tonalElevation = 0.dp,
+        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.88f),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.45f))
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 6.dp, vertical = 6.dp),
+            horizontalArrangement = Arrangement.spacedBy(6.dp)
+        ) {
+            SectionTabToggleButton(
+                label = stringResource(Res.string.nav_home),
+                icon = HomeIcon,
+                enabled = showHome,
+                canToggle = !showHome || enabledCount > 1,
+                onClick = { onToggleTab(AppTab.HOME) }
+            )
+            SectionTabToggleButton(
+                label = stringResource(Res.string.nav_notes),
+                icon = NotesIcon,
+                enabled = showNotes,
+                canToggle = !showNotes || enabledCount > 1,
+                onClick = { onToggleTab(AppTab.NOTES) }
+            )
+            SectionTabToggleButton(
+                label = stringResource(Res.string.nav_projects),
+                icon = ProjectsIcon,
+                enabled = showProjects,
+                canToggle = !showProjects || enabledCount > 1,
+                onClick = { onToggleTab(AppTab.PROJECTS) }
+            )
+        }
+    }
+}
+
+@Composable
+private fun RowScope.SectionTabToggleButton(
+    label: String,
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    enabled: Boolean,
+    canToggle: Boolean,
+    onClick: () -> Unit
+) {
+    val alpha by animateFloatAsState(
+        targetValue = if (enabled) 1f else 0.26f,
+        animationSpec = tween(180),
+        label = "section-tab-alpha"
+    )
+    val scale by animateFloatAsState(
+        targetValue = if (enabled) 1f else 0.97f,
+        animationSpec = tween(180),
+        label = "section-tab-scale"
+    )
+    val containerColor = if (enabled) {
+        MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.35f)
+    } else {
+        MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.08f)
+    }
+    Surface(
+        onClick = {
+            if (canToggle) onClick()
+        },
+        shape = MaterialTheme.shapes.large,
+        color = containerColor,
+        modifier = Modifier
+            .weight(1f)
+            .graphicsLayer(
+                alpha = alpha,
+                scaleX = scale,
+                scaleY = scale
+            )
+    ) {
+        Column(
+            modifier = Modifier.padding(vertical = 10.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = label,
+                tint = if (enabled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.size(19.dp)
+            )
+            Text(
+                text = label,
+                style = MaterialTheme.typography.labelSmall,
+                color = if (enabled) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+    }
+}
+
+@Composable
+private fun SettingsCard(
+    title: String,
+    description: String? = null,
+    toggleChecked: Boolean? = null,
+    onToggle: ((Boolean) -> Unit)? = null,
+    modifier: Modifier = Modifier,
+    content: @Composable ColumnScope.() -> Unit
+) {
+    Surface(
+        shape = MaterialTheme.shapes.large,
+        tonalElevation = 2.dp,
+        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f),
+        modifier = modifier
+    ) {
+        Column(
+            Modifier.fillMaxWidth().padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            if (toggleChecked != null && onToggle != null) {
+                Row(
+                    Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(Modifier.weight(1f)) {
+                        Text(title, style = MaterialTheme.typography.titleMedium)
+                        if (!description.isNullOrBlank()) {
+                            Text(
+                                description,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                    Switch(checked = toggleChecked, onCheckedChange = onToggle)
+                }
+            } else {
+                Text(title, style = MaterialTheme.typography.titleMedium)
+                if (!description.isNullOrBlank()) {
+                    Text(
+                        description,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+            content()
+        }
+    }
+}
+
+@Composable
 private fun TagChip(tag: Tag) {
     val colors = authorAccentColors()
     val base = MaterialTheme.colorScheme.primary
@@ -850,42 +1001,21 @@ private fun TagRow(tag: Tag, onDelete: () -> Unit) {
 
 @Composable
 private fun AccountComingSoonCard() {
-    Surface(
-        shape = MaterialTheme.shapes.large,
-        tonalElevation = 4.dp
-    ) {
-        Box(Modifier.fillMaxWidth()) {
-            Column(
-                Modifier.fillMaxWidth().padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(10.dp)
-            ) {
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Surface(
-                        shape = CircleShape,
-                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.2f),
-                        modifier = Modifier.size(48.dp)
-                    ) {}
-                    Column {
-                        Text(stringResource(Res.string.settings_account_title), style = MaterialTheme.typography.titleMedium)
-                        Text(
-                            stringResource(Res.string.settings_account_subtitle),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                }
-                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    AccountPill(text = stringResource(Res.string.settings_account_profile))
-                    AccountPill(text = stringResource(Res.string.settings_account_devices))
-                    AccountPill(text = stringResource(Res.string.settings_account_subscription))
-                }
+    Box(Modifier.fillMaxWidth()) {
+        SettingsCard(
+            title = stringResource(Res.string.settings_account_title),
+            description = stringResource(Res.string.settings_account_subtitle)
+        ) {
+            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                AccountPill(text = stringResource(Res.string.settings_account_profile))
+                AccountPill(text = stringResource(Res.string.settings_account_devices))
+                AccountPill(text = stringResource(Res.string.settings_account_subscription))
             }
-
-            RepairOverlay(
-                text = stringResource(Res.string.settings_account_soon),
-                modifier = Modifier.align(Alignment.Center)
-            )
         }
+        RepairOverlay(
+            text = stringResource(Res.string.settings_account_soon),
+            modifier = Modifier.align(Alignment.Center)
+        )
     }
 }
 
@@ -909,36 +1039,71 @@ private fun AccountPill(text: String) {
 private fun DataActionButton(
     text: String,
     icon: androidx.compose.ui.graphics.vector.ImageVector,
+    tone: DataActionTone = DataActionTone.Default,
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val shape = MaterialTheme.shapes.medium
+    val shape = MaterialTheme.shapes.large
+    val primary = if (tone == DataActionTone.Danger) {
+        MaterialTheme.colorScheme.error
+    } else {
+        MaterialTheme.colorScheme.primary
+    }
+    val container = lerp(
+        MaterialTheme.colorScheme.surfaceVariant,
+        primary,
+        0.12f
+    )
+    val border = lerp(
+        MaterialTheme.colorScheme.outlineVariant,
+        primary,
+        0.35f
+    )
+    val content = if (tone == DataActionTone.Danger) {
+        MaterialTheme.colorScheme.error
+    } else {
+        MaterialTheme.colorScheme.onSurface
+    }
     Surface(
         shape = shape,
-        tonalElevation = 2.dp,
-        color = MaterialTheme.colorScheme.surfaceVariant,
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+        tonalElevation = 0.dp,
+        color = container,
+        border = BorderStroke(1.dp, border),
         modifier = modifier
-            .height(48.dp)
+            .height(62.dp)
             .clip(shape)
             .clickable(onClick = onClick)
     ) {
         Row(
-            Modifier.fillMaxSize().padding(horizontal = 12.dp),
-            horizontalArrangement = Arrangement.Center,
+            Modifier.fillMaxSize().padding(horizontal = 14.dp),
+            horizontalArrangement = Arrangement.Start,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Icon(
-                imageVector = icon,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.size(18.dp)
+            Surface(
+                shape = CircleShape,
+                color = primary.copy(alpha = 0.18f),
+                modifier = Modifier.size(30.dp)
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    Icon(
+                        imageVector = icon,
+                        contentDescription = null,
+                        tint = primary,
+                        modifier = Modifier.size(16.dp)
+                    )
+                }
+            }
+            Spacer(Modifier.width(10.dp))
+            Text(
+                text = text,
+                style = MaterialTheme.typography.labelLarge,
+                color = content
             )
-            Spacer(Modifier.width(8.dp))
-            Text(text, style = MaterialTheme.typography.labelLarge)
         }
     }
 }
+
+private enum class DataActionTone { Default, Danger }
 
 @Composable
 private fun RepairOverlay(
@@ -993,69 +1158,39 @@ private fun AppStatusAndAboutCard(
     onShowChangelog: () -> Unit,
     onOpenUrl: (String) -> Unit
 ) {
-    val gradient = Brush.linearGradient(
-        listOf(
-            MaterialTheme.colorScheme.primary.copy(alpha = 0.16f),
-            MaterialTheme.colorScheme.tertiary.copy(alpha = 0.42f)
-        )
-    )
     val versionName = remember { AppInfo.versionName }
-
-    Surface(
-        shape = MaterialTheme.shapes.large,
-        tonalElevation = 4.dp
+    SettingsCard(
+        title = stringResource(Res.string.settings_status_title),
+        description = stringResource(Res.string.settings_status_desc)
     ) {
-        Column(
-            Modifier
-                .fillMaxWidth()
-                .background(gradient)
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            AccountPill(text = stringResource(Res.string.settings_status_badge_beta))
+            AccountPill(text = stringResource(Res.string.settings_status_badge_local))
+        }
+        Surface(
+            color = MaterialTheme.colorScheme.surface.copy(alpha = 0.9f),
+            shape = MaterialTheme.shapes.large,
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
         ) {
-            Text(stringResource(Res.string.settings_status_title), style = MaterialTheme.typography.titleMedium)
-            Text(
-                stringResource(Res.string.settings_status_desc),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                AccountPill(text = stringResource(Res.string.settings_status_badge_beta))
-                AccountPill(text = stringResource(Res.string.settings_status_badge_local))
-            }
-
-            Surface(
-                color = MaterialTheme.colorScheme.surface.copy(alpha = 0.85f),
-                shape = MaterialTheme.shapes.large,
-                tonalElevation = 0.dp
+            Column(
+                Modifier.fillMaxWidth().padding(12.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                Column(
-                    Modifier.fillMaxWidth().padding(14.dp),
-                    verticalArrangement = Arrangement.spacedBy(10.dp)
-                ) {
-                    Row(
-                        Modifier
-                            .fillMaxWidth()
-                            .clip(MaterialTheme.shapes.medium)
-                            .clickable { onShowChangelog() }
-                            .padding(vertical = 8.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Column {
-                            Text(stringResource(Res.string.settings_version_title), style = MaterialTheme.typography.labelMedium)
-                            Text(versionName, style = MaterialTheme.typography.bodyMedium)
-                        }
-                        Text(
-                            stringResource(Res.string.settings_changelog),
-                            style = MaterialTheme.typography.labelMedium,
-                            color = MaterialTheme.colorScheme.primary
-                        )
-                    }
-                    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                        ResourceLink(stringResource(Res.string.settings_link_github), "https://github.com/grigorevmp/SimpleToDo", onOpenUrl)
-                        ResourceLink(stringResource(Res.string.settings_link_contact), "https://t.me/grigorevmp", onOpenUrl)
-                    }
-                }
+                ResourceLink(
+                    title = stringResource(Res.string.settings_version_title) + ": $versionName",
+                    actionLabel = stringResource(Res.string.settings_changelog),
+                    onClick = onShowChangelog
+                )
+                ResourceLink(
+                    title = stringResource(Res.string.settings_link_github),
+                    actionLabel = stringResource(Res.string.settings_open),
+                    onClick = { onOpenUrl("https://github.com/grigorevmp/SimpleToDo") }
+                )
+                ResourceLink(
+                    title = stringResource(Res.string.settings_link_contact),
+                    actionLabel = stringResource(Res.string.settings_open),
+                    onClick = { onOpenUrl("https://t.me/grigorevmp") }
+                )
             }
         }
     }
@@ -1064,21 +1199,21 @@ private fun AppStatusAndAboutCard(
 @Composable
 private fun ResourceLink(
     title: String,
-    url: String,
-    onOpenUrl: (String) -> Unit
+    actionLabel: String,
+    onClick: () -> Unit
 ) {
     Row(
         Modifier
             .fillMaxWidth()
             .clip(MaterialTheme.shapes.small)
-            .clickable { onOpenUrl(url) }
+            .clickable { onClick() }
             .padding(vertical = 6.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
         Text(title, style = MaterialTheme.typography.bodyMedium)
         Text(
-            stringResource(Res.string.settings_open),
+            actionLabel,
             style = MaterialTheme.typography.labelMedium,
             color = MaterialTheme.colorScheme.primary
         )
@@ -1099,4 +1234,57 @@ fun RepairOverlayPreview() {
 @Composable
 fun StatusCardPreview() {
     AppStatusAndAboutCard(onShowChangelog = {}, onOpenUrl = {})
+}
+
+@Composable
+private fun ChangelogCard(entry: ChangelogEntry) {
+    val accent = when (entry.buildType) {
+        BuildType.RELEASE -> MaterialTheme.colorScheme.primary
+        BuildType.BETA -> MaterialTheme.colorScheme.tertiary
+        BuildType.ALPHA -> MaterialTheme.colorScheme.secondary
+    }
+    val buildTypeLabel = when (entry.buildType) {
+        BuildType.RELEASE -> "release"
+        BuildType.BETA -> "beta"
+        BuildType.ALPHA -> "alpha"
+    }
+    Surface(
+        shape = MaterialTheme.shapes.medium,
+        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f),
+        border = BorderStroke(1.dp, accent.copy(alpha = 0.35f))
+    ) {
+        Box(Modifier.fillMaxWidth()) {
+            if (entry.buildType == BuildType.BETA) {
+                Icon(
+                    imageVector = SimpleIcons.Beaker,
+                    contentDescription = null,
+                    tint = accent.copy(alpha = 0.12f),
+                    modifier = Modifier
+                        .align(Alignment.CenterEnd)
+                        .padding(end = 10.dp)
+                        .size(42.dp)
+                )
+            }
+            Column(
+                modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp),
+                verticalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                Text(
+                    "${entry.version} • $buildTypeLabel",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = accent
+                )
+                Text(
+                    entry.title,
+                    style = MaterialTheme.typography.titleSmall
+                )
+                entry.changes.forEach { item ->
+                    Text(
+                        "• $item",
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                }
+            }
+        }
+    }
 }

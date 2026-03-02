@@ -17,6 +17,19 @@ class FileImportLauncher internal constructor(
     fun launch() = launchImpl()
 }
 
+data class PickedFile(
+    val uri: String,
+    val name: String?,
+    val mime: String?
+)
+
+@Stable
+class FilePickLauncher internal constructor(
+    private val launchImpl: () -> Unit
+) {
+    fun launch() = launchImpl()
+}
+
 @Composable
 expect fun rememberFileExportLauncher(
     defaultName: String,
@@ -27,3 +40,8 @@ expect fun rememberFileExportLauncher(
 expect fun rememberFileImportLauncher(
     onResult: (String?) -> Unit
 ): FileImportLauncher
+
+@Composable
+expect fun rememberFilePickLauncher(
+    onResult: (PickedFile?) -> Unit
+): FilePickLauncher

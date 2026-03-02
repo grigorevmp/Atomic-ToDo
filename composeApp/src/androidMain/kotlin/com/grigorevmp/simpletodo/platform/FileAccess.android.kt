@@ -2,6 +2,7 @@ package com.grigorevmp.simpletodo.platform
 
 import android.content.Context
 import android.net.Uri
+import android.provider.OpenableColumns
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.Composable
@@ -57,6 +58,41 @@ actual fun rememberFileImportLauncher(
     }
 }
 
+@Composable
+actual fun rememberFilePickLauncher(
+    onResult: (PickedFile?) -> Unit
+): FilePickLauncher {
+    val context = AndroidContextHolder.appContext
+    val launcher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.OpenDocument()
+    ) { uri ->
+        if (uri == null) {
+            onResult(null)
+            return@rememberLauncherForActivityResult
+        }
+        runCatching {
+            context.contentResolver.takePersistableUriPermission(
+                uri,
+                android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION
+            )
+        }
+        val name = queryDisplayName(context, uri)
+        val mime = context.contentResolver.getType(uri)
+        onResult(
+            PickedFile(
+                uri = uri.toString(),
+                name = name,
+                mime = mime
+            )
+        )
+    }
+    return remember(launcher) {
+        FilePickLauncher {
+            launcher.launch(arrayOf("*/*"))
+        }
+    }
+}
+
 private fun writeText(
     context: Context,
     uri: Uri,
@@ -81,6 +117,19 @@ private fun readText(
         context.contentResolver.openInputStream(uri)?.use { input ->
             input.readBytes().toString(Charsets.UTF_8)
         }
+    } catch (_: Exception) {
+        null
+    }
+}
+
+private fun queryDisplayName(context: Context, uri: Uri): String? {
+    return try {
+        context.contentResolver.query(uri, arrayOf(OpenableColumns.DISPLAY_NAME), null, null, null)
+            ?.use { cursor ->
+                if (!cursor.moveToFirst()) return null
+                val idx = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME)
+                if (idx == -1) null else cursor.getString(idx)
+            }
     } catch (_: Exception) {
         null
     }

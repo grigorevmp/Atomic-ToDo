@@ -6,7 +6,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -33,10 +32,8 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.kyant.backdrop.backdrops.LayerBackdrop
 import com.kyant.backdrop.drawBackdrop
 import com.kyant.backdrop.effects.blur
@@ -46,12 +43,14 @@ import org.jetbrains.compose.resources.stringResource
 import simpletodo.composeapp.generated.resources.Res
 import simpletodo.composeapp.generated.resources.nav_home
 import simpletodo.composeapp.generated.resources.nav_notes
+import simpletodo.composeapp.generated.resources.nav_projects
 import simpletodo.composeapp.generated.resources.nav_settings
 
 @Composable
 actual fun PlatformBottomBar(
     tab: AppTab,
     onTab: (AppTab) -> Unit,
+    visibleTabs: List<AppTab>,
     createActions: List<CreateAction>,
     enableEffects: Boolean,
     backdrop: LayerBackdrop,
@@ -76,29 +75,50 @@ actual fun PlatformBottomBar(
     val blurPx = with(density) { 10.dp.toPx() }
     val lensInnerPx = with(density) { 18.dp.toPx() }
     val lensOuterPx = with(density) { 40.dp.toPx() }
-    val items = listOf(
-        IosTabItem(
-            id = "home",
-            label = stringResource(Res.string.nav_home),
-            selected = tab == AppTab.HOME,
-            icon = AppIconId.Home,
-            onClick = { onTab(AppTab.HOME) }
-        ),
-        IosTabItem(
-            id = "notes",
-            label = stringResource(Res.string.nav_notes),
-            selected = tab == AppTab.NOTES,
-            icon = AppIconId.Notes,
-            onClick = { onTab(AppTab.NOTES) }
-        ),
-        IosTabItem(
-            id = "settings",
-            label = stringResource(Res.string.nav_settings),
-            selected = tab == AppTab.SETTINGS,
-            icon = AppIconId.Settings,
-            onClick = { onTab(AppTab.SETTINGS) }
+    val items = buildList {
+        if (AppTab.HOME in visibleTabs) {
+            add(
+                IosTabItem(
+                    id = "home",
+                    label = stringResource(Res.string.nav_home),
+                    selected = tab == AppTab.HOME,
+                    icon = AppIconId.Home,
+                    onClick = { onTab(AppTab.HOME) }
+                )
+            )
+        }
+        if (AppTab.NOTES in visibleTabs) {
+            add(
+                IosTabItem(
+                    id = "notes",
+                    label = stringResource(Res.string.nav_notes),
+                    selected = tab == AppTab.NOTES,
+                    icon = AppIconId.Notes,
+                    onClick = { onTab(AppTab.NOTES) }
+                )
+            )
+        }
+        if (AppTab.PROJECTS in visibleTabs) {
+            add(
+                IosTabItem(
+                    id = "projects",
+                    label = stringResource(Res.string.nav_projects),
+                    selected = tab == AppTab.PROJECTS,
+                    icon = AppIconId.Projects,
+                    onClick = { onTab(AppTab.PROJECTS) }
+                )
+            )
+        }
+        add(
+            IosTabItem(
+                id = "settings",
+                label = stringResource(Res.string.nav_settings),
+                selected = tab == AppTab.SETTINGS,
+                icon = AppIconId.Settings,
+                onClick = { onTab(AppTab.SETTINGS) }
+            )
         )
-    )
+    }
 
     Surface(
         modifier = modifier,
@@ -111,7 +131,7 @@ actual fun PlatformBottomBar(
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(72.dp)
+                .height(66.dp)
         ) {
             Box(
                 Modifier
@@ -135,9 +155,9 @@ actual fun PlatformBottomBar(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(72.dp)
-                    .padding(horizontal = 8.dp, vertical = 6.dp),
-                horizontalArrangement = Arrangement.SpaceEvenly,
+                    .height(66.dp)
+                    .padding(horizontal = 6.dp, vertical = 6.dp),
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 items.forEach { item ->
@@ -145,7 +165,6 @@ actual fun PlatformBottomBar(
                 }
 
                 if (createActions.isNotEmpty()) {
-                    Spacer(Modifier.width(2.dp))
                     IosActionButton(action = createActions.first())
                 }
             }
@@ -196,7 +215,7 @@ private fun RowScope.IosTabButton(item: IosTabItem) {
     Box(
         modifier = Modifier
             .weight(1f)
-            .height(56.dp)
+            .height(52.dp)
             .clip(shape)
             .clickable(
                 interactionSource = interactionSource,
@@ -224,14 +243,7 @@ private fun RowScope.IosTabButton(item: IosTabItem) {
                 id = item.icon,
                 contentDescription = item.label,
                 tint = fg,
-                modifier = Modifier.size(22.dp)
-            )
-            Text(
-                text = item.label,
-                color = fg,
-                fontSize = 11.sp,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
+                modifier = Modifier.size(20.dp)
             )
         }
     }
@@ -244,10 +256,10 @@ private fun IosActionButton(action: CreateAction) {
     Surface(
         onClick = action.onClick,
         color = bg,
-        shape = MaterialTheme.shapes.large,
+        shape = RoundedCornerShape(24.dp),
         modifier = Modifier
-            .width(72.dp)
-            .height(52.dp)
+            .width(48.dp)
+            .height(48.dp)
     ) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
@@ -258,14 +270,7 @@ private fun IosActionButton(action: CreateAction) {
                 id = AppIconId.Add,
                 contentDescription = action.contentDescription,
                 tint = fg,
-                modifier = Modifier.size(22.dp)
-            )
-            Text(
-                text = action.label,
-                color = fg,
-                fontSize = 11.sp,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
+                modifier = Modifier.size(20.dp)
             )
         }
     }

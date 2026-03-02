@@ -1,9 +1,11 @@
 package com.grigorevmp.simpletodo.ui.notes.create
 
 import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -27,69 +29,70 @@ fun MarkdownToolbar(
     onLink: () -> Unit
 ) {
     Row(
-        Modifier.horizontalScroll(rememberScrollState()).padding(horizontal = 18.dp),
+        Modifier.horizontalScroll(rememberScrollState()).padding(horizontal = 8.dp),
     ) {
-        TextButton(onClick = onWrapBold) {
+        val compactPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp)
+        TextButton(onClick = onWrapBold, contentPadding = compactPadding, colors = ButtonDefaults.textButtonColors()) {
             Text(
                 text = "B",
                 fontWeight = Bold
             )
         }
-        TextButton(onClick = onWrapItalic) {
+        TextButton(onClick = onWrapItalic, contentPadding = compactPadding, colors = ButtonDefaults.textButtonColors()) {
             Text(
                 text = "I",
                 fontWeight = Bold
             )
         }
-        TextButton(onClick = onWrapCode) {
+        TextButton(onClick = onWrapCode, contentPadding = compactPadding, colors = ButtonDefaults.textButtonColors()) {
             Text(
                 text = "`",
                 fontWeight = Bold
             )
         }
-        TextButton(onClick = onCodeBlock) {
+        TextButton(onClick = onCodeBlock, contentPadding = compactPadding, colors = ButtonDefaults.textButtonColors()) {
             Text(
                 text = "```",
                 fontWeight = Bold
             )
         }
-        TextButton(onClick = onLink) {
+        TextButton(onClick = onLink, contentPadding = compactPadding, colors = ButtonDefaults.textButtonColors()) {
             Text(
                 text = "Link",
                 fontWeight = Bold
             )
         }
-        TextButton(onClick = onH1) {
+        TextButton(onClick = onH1, contentPadding = compactPadding, colors = ButtonDefaults.textButtonColors()) {
             Text(
                 text = "H1",
                 fontWeight = Bold
             )
         }
-        TextButton(onClick = onH2) {
+        TextButton(onClick = onH2, contentPadding = compactPadding, colors = ButtonDefaults.textButtonColors()) {
             Text(
                 text = "H2",
                 fontWeight = Bold
             )
         }
-        TextButton(onClick = onBullet) {
+        TextButton(onClick = onBullet, contentPadding = compactPadding, colors = ButtonDefaults.textButtonColors()) {
             Text(
                 text = "-",
                 fontWeight = Bold
             )
         }
-        TextButton(onClick = onTodo) {
+        TextButton(onClick = onTodo, contentPadding = compactPadding, colors = ButtonDefaults.textButtonColors()) {
             Text(
                 text = "[ ]",
                 fontWeight = Bold
             )
         }
-        TextButton(onClick = onOrdered) {
+        TextButton(onClick = onOrdered, contentPadding = compactPadding, colors = ButtonDefaults.textButtonColors()) {
             Text(
                 text = "1.",
                 fontWeight = Bold
             )
         }
-        TextButton(onClick = onQuote) {
+        TextButton(onClick = onQuote, contentPadding = compactPadding, colors = ButtonDefaults.textButtonColors()) {
             Text(
                 text = ">",
                 fontWeight = Bold

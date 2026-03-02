@@ -12,6 +12,21 @@ data class Tag(
 )
 
 @Serializable
+data class ProjectStatus(
+    val id: String,
+    val name: String
+)
+
+@Serializable
+data class Project(
+    val id: String,
+    val name: String,
+    val notesFolderId: String,
+    val statuses: List<ProjectStatus>,
+    @Contextual val createdAt: Instant
+)
+
+@Serializable
 enum class Importance { LOW, NORMAL, HIGH, CRITICAL }
 
 @Serializable
@@ -133,6 +148,8 @@ data class TodoTask(
     val title: String,
     val plan: String,
     val noteId: String? = null,
+    val projectId: String? = null,
+    val projectStatusId: String? = null,
     val subtasks: List<Subtask>,
     @Contextual val createdAt: Instant,
     @Contextual val plannedAt: Instant? = null,
@@ -181,6 +198,7 @@ data class AppPrefs(
     val noteSort: NoteSortConfig = NoteSortConfig(),
     val showTagFilters: Boolean = false,
     val showCompletedTasks: Boolean = false,
+    val showCompletedProjectColumn: Boolean = true,
     val pinPinnedInNotifications: Boolean = false,
     val dimScroll: Boolean = true,
     val liquidGlass: Boolean = true,
@@ -188,6 +206,9 @@ data class AppPrefs(
     val themeMode: ThemeMode = ThemeMode.SYSTEM,
     val authorAccentIndex: Int = 0,
     val language: AppLanguage = AppLanguage.SYSTEM,
+    val showHomeTab: Boolean = true,
+    val showNotesTab: Boolean = true,
+    val showProjectsTab: Boolean = true,
     val tags: List<Tag> = listOf(
         Tag(id = "tag_work", name = "Work", colorIndex = 0),
         Tag(id = "tag_study", name = "Study", colorIndex = 1),

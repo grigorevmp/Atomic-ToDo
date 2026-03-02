@@ -4,6 +4,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 
 expect val HomeIcon: ImageVector
 expect val NotesIcon: ImageVector
+expect val ProjectsIcon: ImageVector
 expect val SettingsIcon: ImageVector
 expect val FilterIcon: ImageVector
 expect val TagIcon: ImageVector

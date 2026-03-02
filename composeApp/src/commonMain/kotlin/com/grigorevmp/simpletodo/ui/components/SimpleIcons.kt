@@ -44,6 +44,42 @@ object SimpleIcons {
         }
     }.build()
 
+    val ArrowLeft: ImageVector = ImageVector.Builder(
+        name = "ArrowLeft",
+        defaultWidth = 24.dp,
+        defaultHeight = 24.dp,
+        viewportWidth = 24f,
+        viewportHeight = 24f
+    ).apply {
+        path(fill = SolidColor(Color.Black), pathFillType = PathFillType.NonZero) {
+            moveTo(14f, 7f)
+            lineTo(9f, 12f)
+            lineTo(14f, 17f)
+            lineTo(15.5f, 15.5f)
+            lineTo(12f, 12f)
+            lineTo(15.5f, 8.5f)
+            close()
+        }
+    }.build()
+
+    val ArrowRight: ImageVector = ImageVector.Builder(
+        name = "ArrowRight",
+        defaultWidth = 24.dp,
+        defaultHeight = 24.dp,
+        viewportWidth = 24f,
+        viewportHeight = 24f
+    ).apply {
+        path(fill = SolidColor(Color.Black), pathFillType = PathFillType.NonZero) {
+            moveTo(10f, 7f)
+            lineTo(15f, 12f)
+            lineTo(10f, 17f)
+            lineTo(8.5f, 15.5f)
+            lineTo(12f, 12f)
+            lineTo(8.5f, 8.5f)
+            close()
+        }
+    }.build()
+
     val Flame: ImageVector = ImageVector.Builder(
         name = "Flame",
         defaultWidth = 24.dp,
@@ -135,6 +171,28 @@ object SimpleIcons {
         }
     }.build()
 
+    val Edit: ImageVector = ImageVector.Builder(
+        name = "Edit",
+        defaultWidth = 24.dp,
+        defaultHeight = 24.dp,
+        viewportWidth = 24f,
+        viewportHeight = 24f
+    ).apply {
+        path(fill = SolidColor(Color.Black), pathFillType = PathFillType.NonZero) {
+            moveTo(4f, 17f)
+            lineTo(4f, 20f)
+            lineTo(7f, 20f)
+            lineTo(16f, 11f)
+            lineTo(13f, 8f)
+            close()
+            moveTo(17f, 10f)
+            lineTo(19f, 8f)
+            lineTo(16f, 5f)
+            lineTo(14f, 7f)
+            close()
+        }
+    }.build()
+
 
     val Save: ImageVector = ImageVector.Builder(
         name = "Save",
@@ -154,6 +212,80 @@ object SimpleIcons {
             lineTo(15f, 6f)
             lineTo(15f, 10f)
             lineTo(7f, 10f)
+            close()
+        }
+    }.build()
+
+    val Delete: ImageVector = ImageVector.Builder(
+        name = "Delete",
+        defaultWidth = 24.dp,
+        defaultHeight = 24.dp,
+        viewportWidth = 24f,
+        viewportHeight = 24f
+    ).apply {
+        path(fill = SolidColor(Color.Black), pathFillType = PathFillType.NonZero) {
+            moveTo(7f, 7f)
+            lineTo(17f, 7f)
+            lineTo(16.2f, 20f)
+            lineTo(7.8f, 20f)
+            close()
+            moveTo(9f, 4f)
+            lineTo(15f, 4f)
+            lineTo(16f, 6f)
+            lineTo(8f, 6f)
+            close()
+            moveTo(5f, 6f)
+            lineTo(19f, 6f)
+            lineTo(19f, 8f)
+            lineTo(5f, 8f)
+            close()
+        }
+    }.build()
+
+    val Exclamation: ImageVector = ImageVector.Builder(
+        name = "Exclamation",
+        defaultWidth = 24.dp,
+        defaultHeight = 24.dp,
+        viewportWidth = 24f,
+        viewportHeight = 24f
+    ).apply {
+        path(fill = SolidColor(Color.Black), pathFillType = PathFillType.NonZero) {
+            moveTo(11f, 5f)
+            lineTo(13f, 5f)
+            lineTo(13f, 14f)
+            lineTo(11f, 14f)
+            close()
+            moveTo(11f, 16f)
+            lineTo(13f, 16f)
+            lineTo(13f, 18f)
+            lineTo(11f, 18f)
+            close()
+        }
+    }.build()
+
+    val Beaker: ImageVector = ImageVector.Builder(
+        name = "Beaker",
+        defaultWidth = 24.dp,
+        defaultHeight = 24.dp,
+        viewportWidth = 24f,
+        viewportHeight = 24f
+    ).apply {
+        path(fill = SolidColor(Color.Black), pathFillType = PathFillType.NonZero) {
+            moveTo(9f, 4f)
+            lineTo(15f, 4f)
+            lineTo(15f, 6f)
+            lineTo(14f, 6f)
+            lineTo(14f, 10f)
+            lineTo(18f, 18f)
+            lineTo(6f, 18f)
+            lineTo(10f, 10f)
+            lineTo(10f, 6f)
+            lineTo(9f, 6f)
+            close()
+            moveTo(8.2f, 16f)
+            lineTo(15.8f, 16f)
+            lineTo(14.8f, 14f)
+            lineTo(9.2f, 14f)
             close()
         }
     }.build()
@@ -198,6 +330,32 @@ object SimpleIcons {
             lineTo(18f, 12f)
             lineTo(18f, 14f)
             lineTo(16f, 14f)
+            close()
+        }
+    }.build()
+
+    val MoreVertical: ImageVector = ImageVector.Builder(
+        name = "MoreVertical",
+        defaultWidth = 24.dp,
+        defaultHeight = 24.dp,
+        viewportWidth = 24f,
+        viewportHeight = 24f
+    ).apply {
+        path(fill = SolidColor(Color.Black), pathFillType = PathFillType.NonZero) {
+            moveTo(11f, 6f)
+            lineTo(13f, 6f)
+            lineTo(13f, 8f)
+            lineTo(11f, 8f)
+            close()
+            moveTo(11f, 11f)
+            lineTo(13f, 11f)
+            lineTo(13f, 13f)
+            lineTo(11f, 13f)
+            close()
+            moveTo(11f, 16f)
+            lineTo(13f, 16f)
+            lineTo(13f, 18f)
+            lineTo(11f, 18f)
             close()
         }
     }.build()

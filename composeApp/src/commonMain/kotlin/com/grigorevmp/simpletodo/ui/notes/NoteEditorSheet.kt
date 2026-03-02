@@ -2,13 +2,14 @@ package com.grigorevmp.simpletodo.ui.notes
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.Crossfade
+import androidx.compose.animation.core.animateFloatAsState
 import kotlinx.coroutines.delay
 import com.grigorevmp.simpletodo.ui.components.SimpleIcons
 import androidx.compose.animation.core.tween
-import androidx.compose.animation.scaleOut
-import androidx.compose.animation.scaleIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.fadeIn
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -19,8 +20,8 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBars
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.imePadding
@@ -32,14 +33,20 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.Surface
@@ -63,6 +70,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.TextRange
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -73,26 +81,25 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.platform.LocalUriHandler
+import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.layout.onSizeChanged
 import com.grigorevmp.simpletodo.data.TodoRepository
 import com.grigorevmp.simpletodo.model.Note
+import com.grigorevmp.simpletodo.model.NoteFolder
 import com.grigorevmp.simpletodo.model.TodoTask
 import com.grigorevmp.simpletodo.platform.isIos
+import com.grigorevmp.simpletodo.platform.PlatformBackHandler
+import com.grigorevmp.simpletodo.platform.PickedFile
+import com.grigorevmp.simpletodo.platform.rememberFilePickLauncher
 import com.grigorevmp.simpletodo.ui.components.FadingScrollEdges
 import com.grigorevmp.simpletodo.ui.components.NoOverscroll
 import com.grigorevmp.simpletodo.ui.components.VisibilityIcon
-import com.grigorevmp.simpletodo.ui.components.VisibilityOffIcon
 import com.grigorevmp.simpletodo.ui.components.AddIcon
 import com.grigorevmp.simpletodo.ui.notes.create.MarkdownToolbar
 import com.grigorevmp.simpletodo.ui.notes.create.TaskLinkPicker
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.ExperimentalResourceApi
-import org.jetbrains.compose.resources.painterResource
 import simpletodo.composeapp.generated.resources.Res
-import simpletodo.composeapp.generated.resources.close
-import simpletodo.composeapp.generated.resources.save
-import simpletodo.composeapp.generated.resources.visibility_off
-import simpletodo.composeapp.generated.resources.visibility_on
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import org.jetbrains.compose.resources.stringResource
 import simpletodo.composeapp.generated.resources.note_editor_untitled
@@ -109,12 +116,15 @@ import simpletodo.composeapp.generated.resources.note_editor_linked_task
 import simpletodo.composeapp.generated.resources.note_editor_no_task
 import simpletodo.composeapp.generated.resources.note_editor_no_content
 import simpletodo.composeapp.generated.resources.note_editor_create
+import simpletodo.composeapp.generated.resources.note_editor_copy_all
 import simpletodo.composeapp.generated.resources.note_editor_save
 import simpletodo.composeapp.generated.resources.note_editor_save_cd
 import simpletodo.composeapp.generated.resources.note_block_add
+import simpletodo.composeapp.generated.resources.note_block_add_above
 import simpletodo.composeapp.generated.resources.note_block_duplicate
 import simpletodo.composeapp.generated.resources.note_block_delete
-import simpletodo.composeapp.generated.resources.note_block_turn_into
+import simpletodo.composeapp.generated.resources.note_block_move_down
+import simpletodo.composeapp.generated.resources.note_block_move_up
 import simpletodo.composeapp.generated.resources.note_slash_hint
 import simpletodo.composeapp.generated.resources.note_block_h1
 import simpletodo.composeapp.generated.resources.note_block_h2
@@ -137,7 +147,10 @@ import simpletodo.composeapp.generated.resources.note_block_add_card
 import simpletodo.composeapp.generated.resources.note_block_add_column_label
 import simpletodo.composeapp.generated.resources.note_block_pick_file
 import simpletodo.composeapp.generated.resources.note_block_open_file
+import simpletodo.composeapp.generated.resources.note_block_go_to
 import simpletodo.composeapp.generated.resources.note_block_linked_from
+import simpletodo.composeapp.generated.resources.settings_delete
+import simpletodo.composeapp.generated.resources.settings_close
 import com.grigorevmp.simpletodo.model.NoteBlockType
 import com.grigorevmp.simpletodo.model.TextBlock
 import com.grigorevmp.simpletodo.model.DividerBlock
@@ -168,6 +181,51 @@ private data class BlockState(
     val noteLinkId: String? = null
 )
 
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun NoteFolderPicker(
+    folders: List<NoteFolder>,
+    currentId: String?,
+    onPick: (String?) -> Unit
+) {
+    var expanded by remember { mutableStateOf(false) }
+    val selectedName = folders.firstOrNull { it.id == currentId }?.name ?: "Root folder"
+    ExposedDropdownMenuBox(
+        expanded = expanded,
+        onExpandedChange = { expanded = !expanded }
+    ) {
+        OutlinedTextField(
+            value = selectedName,
+            onValueChange = {},
+            readOnly = true,
+            label = { Text("Folder") },
+            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+            modifier = Modifier.fillMaxWidth().menuAnchor()
+        )
+        ExposedDropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { expanded = false }
+        ) {
+            DropdownMenuItem(
+                text = { Text("Root folder") },
+                onClick = {
+                    expanded = false
+                    onPick(null)
+                }
+            )
+            folders.forEach { folder ->
+                DropdownMenuItem(
+                    text = { Text(folder.name) },
+                    onClick = {
+                        expanded = false
+                        onPick(folder.id)
+                    }
+                )
+            }
+        }
+    }
+}
+
 @Composable
 fun NoteEditorScreen(
     repo: TodoRepository,
@@ -178,8 +236,12 @@ fun NoteEditorScreen(
 ) {
     val prefs by repo.prefs.collectAsState()
     val allNotes by repo.notes.collectAsState()
+    val folders by repo.noteFolders.collectAsState()
     var title by remember(initial?.id) { mutableStateOf(initial?.title ?: "") }
     var taskId by remember(initial?.id) { mutableStateOf(initial?.taskId) }
+    var selectedFolderId by remember(initial?.id, folderId) {
+        mutableStateOf(initial?.folderId ?: folderId)
+    }
     var favorite by remember(initial?.id) { mutableStateOf(initial?.favorite ?: false) }
     var preview by remember(initial?.id) { mutableStateOf(initial != null) }
 
@@ -232,6 +294,7 @@ fun NoteEditorScreen(
     }
     val blocks = remember(initial?.id) { mutableStateListOf<BlockState>().apply { addAll(initialBlocks) } }
     var activeBlockId by remember(initial?.id) { mutableStateOf(blocks.firstOrNull()?.id) }
+    var openedLinkedNoteId by remember { mutableStateOf<String?>(null) }
 
     val linkedTaskTitle = remember(taskId, tasks) {
         tasks.firstOrNull { it.id == taskId }?.title
@@ -246,6 +309,16 @@ fun NoteEditorScreen(
     val scope = rememberCoroutineScope()
     var editorVisible by remember { mutableStateOf(true) }
     val exitDurationMs = 220
+    val uriHandler = LocalUriHandler.current
+    val clipboard = LocalClipboardManager.current
+    var pendingAttachmentBlockId by remember { mutableStateOf<String?>(null) }
+    var pickedAttachment by remember { mutableStateOf<Pair<String, PickedFile>?>(null) }
+
+    val filePickLauncher = rememberFilePickLauncher { picked ->
+        val targetId = pendingAttachmentBlockId ?: return@rememberFilePickLauncher
+        pendingAttachmentBlockId = null
+        if (picked != null) pickedAttachment = targetId to picked
+    }
 
     fun requestDismiss(animate: Boolean) {
         if (!animate) {
@@ -258,6 +331,10 @@ fun NoteEditorScreen(
             delay(exitDurationMs.toLong())
             onDismiss()
         }
+    }
+
+    PlatformBackHandler(enabled = editorVisible) {
+        requestDismiss(animate = true)
     }
 
     val scrollState = rememberScrollState()
@@ -273,7 +350,7 @@ fun NoteEditorScreen(
     var dragOffset by remember { mutableStateOf(0f) }
 
     val untitledNote = stringResource(Res.string.note_editor_untitled)
-    var bottomBarHeightDp by remember { mutableStateOf(120.dp) }
+    var bottomBarHeightDp by remember { mutableStateOf(96.dp) }
     val blockLabels = mapOf(
         NoteBlockType.HEADING_1 to stringResource(Res.string.note_block_h1),
         NoteBlockType.HEADING_2 to stringResource(Res.string.note_block_h2),
@@ -298,7 +375,25 @@ fun NoteEditorScreen(
         blocks[idx] = updater(blocks[idx])
     }
 
-    fun insertBlockAfter(index: Int, type: NoteBlockType = NoteBlockType.PARAGRAPH) {
+    LaunchedEffect(pickedAttachment) {
+        val payload = pickedAttachment ?: return@LaunchedEffect
+        val targetId = payload.first
+        val picked = payload.second
+        updateBlock(targetId) { block ->
+            val currentAttachment = block.attachment ?: AttachmentBlock(id = newId("att"), uri = picked.uri)
+            block.copy(
+                attachment = currentAttachment.copy(
+                    uri = picked.uri,
+                    name = picked.name,
+                    mime = picked.mime
+                ),
+                value = TextFieldValue(picked.uri)
+            )
+        }
+        pickedAttachment = null
+    }
+
+    fun insertBlockAt(index: Int, type: NoteBlockType = NoteBlockType.PARAGRAPH) {
         val newBlock = when (type) {
             NoteBlockType.TABLE -> BlockState(
                 id = newId("nb"),
@@ -348,8 +443,16 @@ fun NoteEditorScreen(
                 checked = false
             )
         }
-        blocks.add(index + 1, newBlock)
+        blocks.add(index.coerceIn(0, blocks.size), newBlock)
         activeBlockId = newBlock.id
+    }
+
+    fun insertBlockAfter(index: Int, type: NoteBlockType = NoteBlockType.PARAGRAPH) {
+        insertBlockAt(index + 1, type)
+    }
+
+    fun insertBlockBefore(index: Int, type: NoteBlockType = NoteBlockType.PARAGRAPH) {
+        insertBlockAt(index, type)
     }
 
     fun removeBlock(index: Int) {
@@ -367,9 +470,26 @@ fun NoteEditorScreen(
         activeBlockId = dup.id
     }
 
+    fun moveBlock(from: Int, to: Int) {
+        if (from !in blocks.indices || to !in blocks.indices || from == to) return
+        val moved = blocks.removeAt(from)
+        blocks.add(to, moved)
+        activeBlockId = moved.id
+    }
+
     fun updateActiveBlock(transform: (TextFieldValue) -> TextFieldValue) {
         val id = activeBlockId ?: return
         updateBlock(id) { it.copy(value = transform(it.value)) }
+    }
+
+    fun numberedPositionAt(index: Int): Int {
+        var position = 0
+        for (i in 0..index) {
+            if (blocks[i].type == NoteBlockType.NUMBERED) {
+                position = if (i > 0 && blocks[i - 1].type == NoteBlockType.NUMBERED) position + 1 else 1
+            }
+        }
+        return position.coerceAtLeast(1)
     }
     val saveNote: () -> Unit = saveNote@{
         val t = title.trim().ifBlank { untitledNote }
@@ -415,7 +535,7 @@ fun NoteEditorScreen(
                     content = contentText,
                     blocks = savedBlocks,
                     taskId = taskId,
-                    folderId = folderId,
+                    folderId = selectedFolderId,
                     favorite = favorite
                 )
             } else {
@@ -425,6 +545,7 @@ fun NoteEditorScreen(
                         content = contentText,
                         blocks = savedBlocks,
                         taskId = taskId,
+                        folderId = selectedFolderId,
                         favorite = favorite
                     )
                 )
@@ -435,15 +556,21 @@ fun NoteEditorScreen(
 
     AnimatedVisibility(
         visible = editorVisible,
-        enter = fadeIn(tween(180)) + scaleIn(tween(180), initialScale = 0.98f),
-        exit = fadeOut(tween(exitDurationMs)) + scaleOut(tween(exitDurationMs), targetScale = 0.98f)
+        enter = slideInHorizontally(
+            animationSpec = tween(220),
+            initialOffsetX = { fullWidth -> fullWidth / 4 }
+        ) + fadeIn(tween(180)),
+        exit = slideOutHorizontally(
+            animationSpec = tween(exitDurationMs),
+            targetOffsetX = { fullWidth -> fullWidth }
+        ) + fadeOut(tween(exitDurationMs))
     ) {
         Surface(
             modifier = Modifier.fillMaxSize(),
             color = MaterialTheme.colorScheme.background,
         ) {
             Box(Modifier.fillMaxSize()) {
-                val bottomBarHeight = if (preview) 72.dp else 120.dp
+                val bottomBarHeight = if (preview) 0.dp else 96.dp
                 Column(Modifier.fillMaxSize()) {
                     Row(
                         Modifier.fillMaxWidth().padding(horizontal = 18.dp, vertical = 6.dp),
@@ -459,13 +586,9 @@ fun NoteEditorScreen(
 
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             val iosTopBarIconSize: Dp = 24.dp
-                            val visibilityPainter = if (isIos) {
-                                painterResource(
-                                    if (preview) Res.drawable.visibility_off else Res.drawable.visibility_on
-                                )
-                            } else {
-                                rememberVectorPainter(if (preview) VisibilityOffIcon else VisibilityIcon)
-                            }
+                            val visibilityPainter = rememberVectorPainter(
+                                if (preview) SimpleIcons.Edit else VisibilityIcon
+                            )
                             val visibilityTint =
                                 if (isIos) MaterialTheme.colorScheme.onSurface else LocalContentColor.current
                             IconButton(onClick = { preview = !preview }) {
@@ -514,10 +637,13 @@ fun NoteEditorScreen(
                                             .fillMaxWidth()
                                             .verticalScroll(scrollState)
                                             .padding(horizontal = 18.dp)
-                                            .padding(
-                                                bottom = bottomBarHeight +
-                                                    if (imeVisible) imeBottomDp else navBottomDp
-                                            ),
+                                        .padding(
+                                            bottom = if (preview) {
+                                                if (imeVisible) imeBottomDp else navBottomDp
+                                            } else {
+                                                bottomBarHeight + if (imeVisible) imeBottomDp else 0.dp
+                                            }
+                                        ),
                                         verticalArrangement = Arrangement.spacedBy(12.dp)
                                     ) {
                                         Text(
@@ -540,7 +666,86 @@ fun NoteEditorScreen(
                                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                                             )
                                         } else {
-                                            NoteBlocksPreview(blocks = blocks, notes = allNotes)
+                                            NoteBlocksPreview(
+                                                blocks = blocks,
+                                                notes = allNotes,
+                                                onToggleTodo = { id, checked ->
+                                                    updateBlock(id) { it.copy(checked = checked) }
+                                                },
+                                                onCopyBlock = { copied ->
+                                                    clipboard.setText(AnnotatedString(copied))
+                                                },
+                                                onAddKanbanCard = { blockId, columnIndex ->
+                                                    updateBlock(blockId) { state ->
+                                                        val kanban = state.kanban ?: return@updateBlock state
+                                                        if (columnIndex !in kanban.columns.indices) return@updateBlock state
+                                                        val updatedColumns = kanban.columns.mapIndexed { idx, column ->
+                                                            if (idx == columnIndex) column.copy(cards = column.cards + "") else column
+                                                        }
+                                                        state.copy(kanban = kanban.copy(columns = updatedColumns))
+                                                    }
+                                                },
+                                                onUpdateKanbanCardText = { blockId, columnIndex, cardIndex, text ->
+                                                    updateBlock(blockId) { state ->
+                                                        val kanban = state.kanban ?: return@updateBlock state
+                                                        if (columnIndex !in kanban.columns.indices) return@updateBlock state
+                                                        val updatedColumns = kanban.columns.mapIndexed { idx, column ->
+                                                            if (idx != columnIndex) {
+                                                                column
+                                                            } else {
+                                                                column.copy(
+                                                                    cards = column.cards.mapIndexed { cardIdx, value ->
+                                                                        if (cardIdx == cardIndex) text else value
+                                                                    }
+                                                                )
+                                                            }
+                                                        }
+                                                        state.copy(kanban = kanban.copy(columns = updatedColumns))
+                                                    }
+                                                },
+                                                onMoveKanbanCard = { blockId, fromColumn, toColumn, cardIndex ->
+                                                    updateBlock(blockId) { state ->
+                                                        val kanban = state.kanban ?: return@updateBlock state
+                                                        if (fromColumn !in kanban.columns.indices || toColumn !in kanban.columns.indices) {
+                                                            return@updateBlock state
+                                                        }
+                                                        val source = kanban.columns[fromColumn]
+                                                        if (cardIndex !in source.cards.indices) return@updateBlock state
+                                                        val card = source.cards[cardIndex]
+                                                        val updatedColumns = kanban.columns.mapIndexed { columnIndex, column ->
+                                                            when (columnIndex) {
+                                                                fromColumn -> column.copy(
+                                                                    cards = column.cards.filterIndexed { idx, _ -> idx != cardIndex }
+                                                                )
+                                                                toColumn -> column.copy(cards = column.cards + card)
+                                                                else -> column
+                                                            }
+                                                        }
+                                                        state.copy(kanban = kanban.copy(columns = updatedColumns))
+                                                    }
+                                                },
+                                                onOpenAttachment = { uri ->
+                                                    if (uri.isNotBlank()) {
+                                                        uriHandler.openUri(uri)
+                                                    }
+                                                },
+                                                onOpenLinkedNote = { noteId ->
+                                                    openedLinkedNoteId = noteId
+                                                }
+                                            )
+                                        }
+                                        TextButton(
+                                            onClick = {
+                                                val allText = blocks.joinToString("\n") { block ->
+                                                    blockPreviewText(block, allNotes)
+                                                }.trim()
+                                                if (allText.isNotBlank()) {
+                                                    clipboard.setText(AnnotatedString(allText))
+                                                }
+                                            },
+                                            modifier = Modifier.align(Alignment.End)
+                                        ) {
+                                            Text(stringResource(Res.string.note_editor_copy_all))
                                         }
                                         if (backlinks.isNotEmpty()) {
                                             Spacer(Modifier.height(12.dp))
@@ -574,7 +779,7 @@ fun NoteEditorScreen(
                                             start = 18.dp,
                                             end = 18.dp,
                                             top = 0.dp,
-                                            bottom = bottomBarHeightDp + navBottomDp
+                                            bottom = bottomBarHeightDp + 8.dp
                                         ),
                                         verticalArrangement = Arrangement.spacedBy(8.dp),
                                         modifier = Modifier.imePadding()
@@ -596,28 +801,63 @@ fun NoteEditorScreen(
                                                 onPick = { taskId = it })
                                         }
 
+                                        item {
+                                            NoteFolderPicker(
+                                                folders = folders,
+                                                currentId = selectedFolderId,
+                                                onPick = { selectedFolderId = it }
+                                            )
+                                        }
+
                                         itemsIndexed(blocks, key = { _, b -> b.id }) { index, block ->
                                             val isDragging = draggingIndex == index
                                             BlockRow(
                                                 block = block,
                                                 index = index,
+                                                numberedPosition = if (block.type == NoteBlockType.NUMBERED) {
+                                                    numberedPositionAt(index)
+                                                } else {
+                                                    null
+                                                },
                                                 isActive = activeBlockId == block.id,
                                                 typeLabels = blockLabels,
                                                 notes = allNotes,
                                                 currentNoteId = initial?.id,
                                                 onActive = { activeBlockId = block.id },
-                                                onChangeValue = { v -> updateBlock(block.id) { it.copy(value = v) } },
+                                                onChangeValue = { v ->
+                                                    if (block.type == NoteBlockType.NUMBERED && v.text.contains('\n')) {
+                                                        val currentText = v.text.substringBefore('\n')
+                                                        val nextText = v.text.substringAfter('\n')
+                                                        updateBlock(block.id) { it.copy(value = TextFieldValue(currentText)) }
+                                                        insertBlockAfter(index, NoteBlockType.NUMBERED)
+                                                        blocks.getOrNull(index + 1)?.let { created ->
+                                                            updateBlock(created.id) { it.copy(value = TextFieldValue(nextText)) }
+                                                        }
+                                                    } else {
+                                                        updateBlock(block.id) { it.copy(value = v) }
+                                                    }
+                                                },
                                                 onToggleTodo = { checked -> updateBlock(block.id) { it.copy(checked = checked) } },
                                                 onUpdateTable = { table -> updateBlock(block.id) { it.copy(table = table) } },
                                                 onUpdateKanban = { kanban -> updateBlock(block.id) { it.copy(kanban = kanban) } },
                                                 onUpdateAttachment = { att, v ->
                                                     updateBlock(block.id) { it.copy(attachment = att, value = v) }
                                                 },
+                                                onPickAttachment = {
+                                                    pendingAttachmentBlockId = block.id
+                                                    filePickLauncher.launch()
+                                                },
                                                 onUpdateNoteLink = { noteId -> updateBlock(block.id) { it.copy(noteLinkId = noteId) } },
+                                                onAddAbove = { insertBlockBefore(index) },
                                                 onAddBelow = { insertBlockAfter(index) },
                                                 onDuplicate = { duplicateBlock(index) },
                                                 onDelete = { removeBlock(index) },
+                                                onMoveUp = { moveBlock(index, index - 1) },
+                                                onMoveDown = { moveBlock(index, index + 1) },
+                                                canMoveUp = index > 0,
+                                                canMoveDown = index < blocks.lastIndex,
                                                 onChangeType = { type ->
+                                                    val cleanText = block.value.text.removePrefix("/")
                                                     when (type) {
                                                         NoteBlockType.DIVIDER -> {
                                                             blocks[index] = block.copy(type = NoteBlockType.DIVIDER, value = TextFieldValue(""))
@@ -664,7 +904,6 @@ fun NoteEditorScreen(
                                                             )
                                                         }
                                                         else -> {
-                                                            val cleanText = block.value.text.removePrefix("/")
                                                             blocks[index] = block.copy(type = type, value = TextFieldValue(cleanText))
                                                         }
                                                     }
@@ -732,23 +971,21 @@ fun NoteEditorScreen(
                     )
                 }
 
-                Surface(
-                    tonalElevation = 6.dp,
-                    color = MaterialTheme.colorScheme.surface,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .align(Alignment.BottomCenter)
-                        .imePadding()
-                        .padding(bottom = if (navBottomDp > 6.dp) navBottomDp - 6.dp else 0.dp)
-                        .onSizeChanged { size ->
-                            bottomBarHeightDp = with(density) { size.height.toDp() }
-                        }
-                ) {
-                    Column(
-                        Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 10.dp),
-                        verticalArrangement = Arrangement.spacedBy(10.dp)
+                AnimatedVisibility(!preview, modifier = Modifier.align(Alignment.BottomCenter)) {
+                    Surface(
+                        tonalElevation = 6.dp,
+                        color = MaterialTheme.colorScheme.surface,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .imePadding()
+                            .onSizeChanged { size ->
+                                bottomBarHeightDp = with(density) { size.height.toDp() }
+                            }
                     ) {
-                        AnimatedVisibility(!preview) {
+                        Column(
+                            Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 8.dp),
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
                             MarkdownToolbar(
                                 onWrapBold = { updateActiveBlock { wrapSelection(it, "**", "**") } },
                                 onWrapItalic = { updateActiveBlock { wrapSelection(it, "*", "*") } },
@@ -760,11 +997,11 @@ fun NoteEditorScreen(
                                 onOrdered = { activeBlockId?.let { id -> updateBlock(id) { it.copy(type = NoteBlockType.NUMBERED) } } },
                                 onQuote = { activeBlockId?.let { id -> updateBlock(id) { it.copy(type = NoteBlockType.QUOTE) } } },
                                 onCodeBlock = { activeBlockId?.let { id -> updateBlock(id) { it.copy(type = NoteBlockType.CODE) } } },
-                                onLink = { updateActiveBlock { wrapSelection(it, "[", "](url)") } })
-                        }
-                        AnimatedVisibility(!preview) {
+                                onLink = { updateActiveBlock { wrapSelection(it, "[", "](url)") } }
+                            )
                             Button(
-                                onClick = saveNote, modifier = Modifier.fillMaxWidth()
+                                onClick = saveNote,
+                                modifier = Modifier.fillMaxWidth()
                             ) {
                                 Text(
                                     if (initial == null) stringResource(Res.string.note_editor_create) else stringResource(
@@ -778,12 +1015,20 @@ fun NoteEditorScreen(
             }
         }
     }
+    val openedLinkedNote = allNotes.firstOrNull { it.id == openedLinkedNoteId }
+    if (openedLinkedNote != null) {
+        LinkedNoteDialog(
+            note = openedLinkedNote,
+            onDismiss = { openedLinkedNoteId = null }
+        )
+    }
 }
 
 @Composable
 private fun BlockRow(
     block: BlockState,
     index: Int,
+    numberedPosition: Int?,
     isActive: Boolean,
     typeLabels: Map<NoteBlockType, String>,
     notes: List<Note>,
@@ -794,10 +1039,16 @@ private fun BlockRow(
     onUpdateTable: (TableBlock) -> Unit,
     onUpdateKanban: (KanbanBlock) -> Unit,
     onUpdateAttachment: (AttachmentBlock, TextFieldValue) -> Unit,
+    onPickAttachment: () -> Unit,
     onUpdateNoteLink: (String?) -> Unit,
+    onAddAbove: () -> Unit,
     onAddBelow: () -> Unit,
     onDuplicate: () -> Unit,
     onDelete: () -> Unit,
+    onMoveUp: () -> Unit,
+    onMoveDown: () -> Unit,
+    canMoveUp: Boolean,
+    canMoveDown: Boolean,
     onChangeType: (NoteBlockType) -> Unit,
     onDragStart: () -> Unit,
     onDrag: (Float) -> Unit,
@@ -835,15 +1086,16 @@ private fun BlockRow(
     } else typeItems
 
     val textStyle = when (block.type) {
-        NoteBlockType.HEADING_1 -> MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.SemiBold)
-        NoteBlockType.HEADING_2 -> MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.SemiBold)
-        NoteBlockType.HEADING_3 -> MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold)
-        NoteBlockType.CODE -> MaterialTheme.typography.bodyMedium.copy(fontFamily = FontFamily.Monospace)
-        else -> MaterialTheme.typography.bodyMedium
+        NoteBlockType.HEADING_1 -> MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.SemiBold)
+        NoteBlockType.HEADING_2 -> MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold)
+        NoteBlockType.HEADING_3 -> MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold)
+        NoteBlockType.CODE -> MaterialTheme.typography.bodySmall.copy(fontFamily = FontFamily.Monospace)
+        else -> MaterialTheme.typography.bodySmall
     }
 
     val containerColor = when (block.type) {
         NoteBlockType.CODE -> MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f)
+        NoteBlockType.QUOTE -> MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.25f)
         NoteBlockType.CALLOUT -> MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.7f)
         else -> Color.Transparent
     }
@@ -856,17 +1108,16 @@ private fun BlockRow(
     ) {
         Column(Modifier.fillMaxWidth()) {
             Row(
-                verticalAlignment = Alignment.Top,
+                verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth().alpha(if (isActive) 1f else 0.96f)
             ) {
                 Icon(
                     imageVector = SimpleIcons.Drag,
                     contentDescription = null,
                     tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier
-                        .size(18.dp)
-                        .padding(top = 6.dp)
+                        .size(22.dp)
                         .pointerInput(block.id) {
                             detectDragGesturesAfterLongPress(
                                 onDragStart = { onDragStart() },
@@ -884,13 +1135,13 @@ private fun BlockRow(
                         modifier = Modifier.padding(top = 4.dp)
                     )
                 } else if (block.type == NoteBlockType.BULLET) {
-                    Text("•", modifier = Modifier.padding(top = 10.dp))
+                    Text("•", modifier = Modifier.padding(top = 2.dp))
                 } else if (block.type == NoteBlockType.NUMBERED) {
-                    Text("${index + 1}.", modifier = Modifier.padding(top = 10.dp))
+                    Text("${numberedPosition ?: 1}.", modifier = Modifier.padding(top = 2.dp))
                 } else if (block.type == NoteBlockType.QUOTE) {
-                    Text("❝", modifier = Modifier.padding(top = 8.dp), style = MaterialTheme.typography.bodySmall)
+                    Text("❝", modifier = Modifier.padding(top = 2.dp), style = MaterialTheme.typography.bodySmall)
                 } else if (block.type == NoteBlockType.CALLOUT) {
-                    Text("!", modifier = Modifier.padding(top = 8.dp), style = MaterialTheme.typography.bodySmall)
+                    Text("!", modifier = Modifier.padding(top = 2.dp), style = MaterialTheme.typography.bodySmall)
                 }
 
                 when (block.type) {
@@ -923,11 +1174,13 @@ private fun BlockRow(
                             attachment = att,
                             value = block.value,
                             onUpdate = { a, v -> onUpdateAttachment(a, v) },
+                            onPick = onPickAttachment,
                             onOpen = { uriHandler.openUri(it) }
                         )
                     }
                     NoteBlockType.NOTE_LINK -> {
                         NoteLinkBlockEditor(
+                            modifier = Modifier.weight(1f),
                             currentNoteId = currentNoteId,
                             notes = notes,
                             selectedId = block.noteLinkId,
@@ -948,7 +1201,7 @@ private fun BlockRow(
                             },
                             textStyle = textStyle,
                             singleLine = !isMultiLine,
-                            minLines = if (isMultiLine) 3 else 1,
+                            minLines = if (isMultiLine && block.type == NoteBlockType.CODE) 3 else if (isMultiLine) 2 else 1,
                             placeholder = {
                                 if (block.value.text.isBlank()) {
                                     Text(typeLabels[block.type] ?: "")
@@ -960,6 +1213,7 @@ private fun BlockRow(
                                 focusedIndicatorColor = Color.Transparent,
                                 unfocusedIndicatorColor = Color.Transparent
                             ),
+                            shape = MaterialTheme.shapes.medium,
                             modifier = Modifier
                                 .weight(1f)
                                 .onFocusChanged { if (it.isFocused) onActive() }
@@ -967,15 +1221,57 @@ private fun BlockRow(
                     }
                 }
 
-                IconButton(onClick = { onAddBelow() }) {
-                    Icon(AddIcon, contentDescription = stringResource(Res.string.note_block_add))
-                }
-                IconButton(onClick = { showMenu = true }) {
-                    Icon(SimpleIcons.More, contentDescription = null)
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(2.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    IconButton(
+                        onClick = { showMenu = true },
+                        modifier = Modifier.size(32.dp)
+                    ) {
+                        Icon(
+                            SimpleIcons.MoreVertical,
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
+                    IconButton(
+                        onClick = { onAddBelow() },
+                        modifier = Modifier.size(32.dp)
+                    ) {
+                        Icon(
+                            AddIcon,
+                            contentDescription = stringResource(Res.string.note_block_add),
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
                 }
             }
 
-            DropdownMenu(expanded = showMenu, onDismissRequest = { showMenu = false }) {
+            DropdownMenu(
+                expanded = showMenu,
+                onDismissRequest = { showMenu = false },
+                modifier = Modifier.heightIn(max = 320.dp)
+            ) {
+                DropdownMenuItem(
+                    text = { Text(stringResource(Res.string.note_block_add_above)) },
+                    onClick = { showMenu = false; onAddAbove() }
+                )
+                DropdownMenuItem(
+                    text = { Text(stringResource(Res.string.note_block_add)) },
+                    onClick = { showMenu = false; onAddBelow() }
+                )
+                DropdownMenuItem(
+                    text = { Text(stringResource(Res.string.note_block_move_up)) },
+                    onClick = { showMenu = false; onMoveUp() },
+                    enabled = canMoveUp
+                )
+                DropdownMenuItem(
+                    text = { Text(stringResource(Res.string.note_block_move_down)) },
+                    onClick = { showMenu = false; onMoveDown() },
+                    enabled = canMoveDown
+                )
+                Divider()
                 DropdownMenuItem(
                     text = { Text(stringResource(Res.string.note_block_duplicate)) },
                     onClick = { showMenu = false; onDuplicate() }
@@ -985,11 +1281,6 @@ private fun BlockRow(
                     onClick = { showMenu = false; onDelete() }
                 )
                 Divider()
-                DropdownMenuItem(
-                    text = { Text(stringResource(Res.string.note_block_turn_into)) },
-                    onClick = {},
-                    enabled = false
-                )
                 typeItems.forEach { type ->
                     DropdownMenuItem(
                         text = { Text(typeLabels[type] ?: type.name) },
@@ -1155,24 +1446,39 @@ private fun AttachmentBlockEditor(
     attachment: AttachmentBlock,
     value: TextFieldValue,
     onUpdate: (AttachmentBlock, TextFieldValue) -> Unit,
+    onPick: () -> Unit,
     onOpen: (String) -> Unit
 ) {
-    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-        TextField(
-            value = value,
-            onValueChange = { v -> onUpdate(attachment.copy(uri = v.text), v) },
-            placeholder = { Text(stringResource(Res.string.note_block_pick_file)) },
-            colors = TextFieldDefaults.colors(
-                focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.25f),
-                unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.25f),
-                focusedIndicatorColor = Color.Transparent,
-                unfocusedIndicatorColor = Color.Transparent
-            ),
-            modifier = Modifier.fillMaxWidth()
-        )
-        if (value.text.isNotBlank()) {
-            TextButton(onClick = { onOpen(value.text) }) {
-                Text(stringResource(Res.string.note_block_open_file))
+    Surface(
+        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.25f),
+        shape = MaterialTheme.shapes.medium,
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Column(
+            modifier = Modifier.padding(10.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            val label = attachment.name?.ifBlank { null } ?: value.text.ifBlank { stringResource(Res.string.note_block_pick_file) }
+            Text(label, style = MaterialTheme.typography.bodySmall)
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                TextButton(onClick = onPick) {
+                    Text(stringResource(Res.string.note_block_pick_file))
+                }
+                if (value.text.isNotBlank()) {
+                    TextButton(onClick = { onOpen(value.text) }) {
+                        Text(stringResource(Res.string.note_block_open_file))
+                    }
+                }
+                if (value.text.isNotBlank()) {
+                    TextButton(onClick = {
+                        onUpdate(
+                            attachment.copy(uri = "", name = null, mime = null),
+                            TextFieldValue("")
+                        )
+                    }) {
+                        Text(stringResource(Res.string.settings_delete))
+                    }
+                }
             }
         }
     }
@@ -1180,6 +1486,7 @@ private fun AttachmentBlockEditor(
 
 @Composable
 private fun NoteLinkBlockEditor(
+    modifier: Modifier = Modifier,
     currentNoteId: String?,
     notes: List<Note>,
     selectedId: String?,
@@ -1189,9 +1496,18 @@ private fun NoteLinkBlockEditor(
     val options = notes.filter { it.id != currentNoteId }
     val current = options.firstOrNull { it.id == selectedId }?.title
         ?: stringResource(Res.string.note_block_note_link)
-    Column {
-        TextButton(onClick = { expanded = true }) { Text(current) }
-        DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+    Box(modifier = modifier) {
+        TextButton(
+            onClick = { expanded = true },
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text(current, modifier = Modifier.fillMaxWidth())
+        }
+        DropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { expanded = false },
+            modifier = Modifier.fillMaxWidth(0.92f)
+        ) {
             options.forEach { note ->
                 DropdownMenuItem(
                     text = { Text(note.title.ifBlank { stringResource(Res.string.note_editor_untitled) }) },
@@ -1203,73 +1519,196 @@ private fun NoteLinkBlockEditor(
 }
 
 @Composable
-private fun NoteBlocksPreview(blocks: List<BlockState>, notes: List<Note>) {
+private fun NoteBlocksPreview(
+    blocks: List<BlockState>,
+    notes: List<Note>,
+    onToggleTodo: (String, Boolean) -> Unit,
+    onCopyBlock: (String) -> Unit,
+    onAddKanbanCard: (String, Int) -> Unit,
+    onUpdateKanbanCardText: (String, Int, Int, String) -> Unit,
+    onMoveKanbanCard: (String, Int, Int, Int) -> Unit,
+    onOpenAttachment: (String) -> Unit,
+    onOpenLinkedNote: (String) -> Unit
+) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        var numberedPosition = 0
         blocks.forEachIndexed { index, block ->
+            if (block.type == NoteBlockType.NUMBERED) {
+                numberedPosition = if (index > 0 && blocks[index - 1].type == NoteBlockType.NUMBERED) {
+                    numberedPosition + 1
+                } else {
+                    1
+                }
+            }
             when (block.type) {
                 NoteBlockType.DIVIDER -> Divider()
-                NoteBlockType.HEADING_1 -> MarkdownText(block.value.text, style = MaterialTheme.typography.headlineSmall)
-                NoteBlockType.HEADING_2 -> MarkdownText(block.value.text, style = MaterialTheme.typography.titleLarge)
-                NoteBlockType.HEADING_3 -> MarkdownText(block.value.text, style = MaterialTheme.typography.titleMedium)
-                NoteBlockType.BULLET -> MarkdownText("• ${block.value.text}")
-                NoteBlockType.NUMBERED -> MarkdownText("${index + 1}. ${block.value.text}")
+                NoteBlockType.HEADING_1 -> PreviewCopyBox(block, notes, onCopyBlock) {
+                    MarkdownText(block.value.text, style = MaterialTheme.typography.headlineSmall)
+                }
+                NoteBlockType.HEADING_2 -> PreviewCopyBox(block, notes, onCopyBlock) {
+                    MarkdownText(block.value.text, style = MaterialTheme.typography.titleLarge)
+                }
+                NoteBlockType.HEADING_3 -> PreviewCopyBox(block, notes, onCopyBlock) {
+                    MarkdownText(block.value.text, style = MaterialTheme.typography.titleMedium)
+                }
+                NoteBlockType.BULLET -> PreviewCopyBox(block, notes, onCopyBlock) {
+                    MarkdownText("• ${block.value.text}")
+                }
+                NoteBlockType.NUMBERED -> PreviewCopyBox(block, notes, onCopyBlock) {
+                    MarkdownText("${numberedPosition}. ${block.value.text}")
+                }
                 NoteBlockType.TODO -> {
-                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Checkbox(checked = block.checked, onCheckedChange = null)
-                        MarkdownText(block.value.text, style = MaterialTheme.typography.bodyMedium)
+                    PreviewCopyBox(block, notes, onCopyBlock) {
+                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Checkbox(
+                                checked = block.checked,
+                                onCheckedChange = { checked -> onToggleTodo(block.id, checked) }
+                            )
+                            MarkdownText(block.value.text, style = MaterialTheme.typography.bodyMedium)
+                        }
                     }
                 }
                 NoteBlockType.QUOTE -> {
+                    PreviewCopyBox(block, notes, onCopyBlock) {
+                        Surface(
+                            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f),
+                            shape = MaterialTheme.shapes.small
+                        ) {
+                            MarkdownText(
+                                block.value.text,
+                                modifier = Modifier.padding(8.dp),
+                                style = MaterialTheme.typography.bodyMedium
+                            )
+                        }
+                    }
+                }
+                NoteBlockType.CODE -> PreviewCopyBox(block, notes, onCopyBlock) {
                     Surface(
-                        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f),
+                        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f),
                         shape = MaterialTheme.shapes.small
                     ) {
-                        MarkdownText(
+                        Text(
                             block.value.text,
-                            modifier = Modifier.padding(8.dp),
-                            style = MaterialTheme.typography.bodyMedium
+                            style = MaterialTheme.typography.bodyMedium.copy(fontFamily = FontFamily.Monospace),
+                            modifier = Modifier.padding(8.dp)
                         )
                     }
                 }
-                NoteBlockType.CODE -> Surface(
-                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f),
-                    shape = MaterialTheme.shapes.small
-                ) {
-                    Text(
-                        block.value.text,
-                        style = MaterialTheme.typography.bodyMedium.copy(fontFamily = FontFamily.Monospace),
-                        modifier = Modifier.padding(8.dp)
-                    )
-                }
-                NoteBlockType.CALLOUT -> Surface(
-                    color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.7f),
-                    shape = MaterialTheme.shapes.medium
-                ) {
-                    MarkdownText(block.value.text, modifier = Modifier.padding(8.dp))
+                NoteBlockType.CALLOUT -> PreviewCopyBox(block, notes, onCopyBlock) {
+                    Surface(
+                        color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.8f),
+                        shape = MaterialTheme.shapes.medium
+                    ) {
+                        Box(
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Icon(
+                                imageVector = SimpleIcons.Exclamation,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.28f),
+                                modifier = Modifier
+                                    .align(Alignment.CenterEnd)
+                                    .padding(end = 10.dp)
+                                    .size(34.dp)
+                            )
+                            Column(
+                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp),
+                                verticalArrangement = Arrangement.spacedBy(4.dp)
+                            ) {
+                                MarkdownText(block.value.text)
+                            }
+                        }
+                    }
                 }
                 NoteBlockType.TABLE -> {
                     val table = block.table
                     if (table != null) {
-                        TablePreview(table)
+                        PreviewCopyBox(block, notes, onCopyBlock) { TablePreview(table) }
                     }
                 }
                 NoteBlockType.KANBAN -> {
                     val kb = block.kanban
                     if (kb != null) {
-                        KanbanPreview(kb)
+                        PreviewCopyBox(block, notes, onCopyBlock) {
+                            KanbanPreview(
+                                block = kb,
+                                onAddCard = { columnIndex ->
+                                    onAddKanbanCard(block.id, columnIndex)
+                                },
+                                onUpdateCardText = { columnIndex, cardIndex, text ->
+                                    onUpdateKanbanCardText(block.id, columnIndex, cardIndex, text)
+                                },
+                                onMoveCard = { fromColumn, toColumn, cardIndex ->
+                                    onMoveKanbanCard(block.id, fromColumn, toColumn, cardIndex)
+                                }
+                            )
+                        }
                     }
                 }
                 NoteBlockType.ATTACHMENT -> {
-                    val label = block.attachment?.name ?: block.value.text
-                    Text("📎 $label")
-                }
-                NoteBlockType.NOTE_LINK -> {
-                    val title = notes.firstOrNull { it.id == block.noteLinkId }?.title
-                    if (title != null) {
-                        Text("↗ $title", color = MaterialTheme.colorScheme.primary)
+                    val attachment = block.attachment ?: AttachmentBlock(id = block.id, uri = block.value.text)
+                    PreviewCopyBox(block, notes, onCopyBlock) {
+                        Surface(
+                            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.24f),
+                            shape = MaterialTheme.shapes.medium
+                        ) {
+                            Column(
+                                modifier = Modifier.padding(10.dp),
+                                verticalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                if (attachment.uri.isNotBlank()) {
+                                    AttachmentMediaPreview(
+                                        uri = attachment.uri,
+                                        mime = attachment.mime,
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .height(160.dp)
+                                    )
+                                }
+                                val label = attachment.name ?: attachment.uri
+                                Text(label.ifBlank { stringResource(Res.string.note_block_attachment) })
+                                if (attachment.uri.isNotBlank()) {
+                                    TextButton(onClick = { onOpenAttachment(attachment.uri) }) {
+                                        Text(stringResource(Res.string.note_block_open_file))
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
-                NoteBlockType.PARAGRAPH -> MarkdownText(block.value.text)
+                NoteBlockType.NOTE_LINK -> {
+                    val note = notes.firstOrNull { it.id == block.noteLinkId }
+                    if (note != null) {
+                        PreviewCopyBox(block, notes, onCopyBlock) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    note.title.ifBlank { stringResource(Res.string.note_editor_untitled) },
+                                    color = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.weight(1f)
+                                )
+                                TextButton(onClick = { onOpenLinkedNote(note.id) }) {
+                                    Text(stringResource(Res.string.note_block_go_to))
+                                }
+                            }
+                        }
+                    }
+                }
+                NoteBlockType.PARAGRAPH -> PreviewCopyBox(block, notes, onCopyBlock) {
+                    MarkdownText(block.value.text)
+                }
+            }
+            val nextType = blocks.getOrNull(index + 1)?.type
+            if (index != blocks.lastIndex && block.type != NoteBlockType.DIVIDER && nextType != NoteBlockType.DIVIDER) {
+                Divider(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 6.dp),
+                    color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.45f)
+                )
             }
         }
     }
@@ -1277,15 +1716,20 @@ private fun NoteBlocksPreview(blocks: List<BlockState>, notes: List<Note>) {
 
 @Composable
 private fun TablePreview(table: TableBlock) {
-    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+    Column(verticalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.fillMaxWidth()) {
         table.cells.forEach { row ->
-            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            Row(horizontalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.fillMaxWidth()) {
                 row.forEach { cell ->
                     Surface(
-                        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f),
-                        shape = MaterialTheme.shapes.small
+                        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
+                        shape = MaterialTheme.shapes.small,
+                        modifier = Modifier.weight(1f)
                     ) {
-                        Text(cell.ifBlank { " " }, modifier = Modifier.padding(6.dp))
+                        Text(
+                            text = cell.ifBlank { " " },
+                            style = MaterialTheme.typography.bodySmall,
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 10.dp)
+                        )
                     }
                 }
             }
@@ -1294,21 +1738,234 @@ private fun TablePreview(table: TableBlock) {
 }
 
 @Composable
-private fun KanbanPreview(block: KanbanBlock) {
-    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        block.columns.forEach { col ->
+private fun PreviewCopyBox(
+    block: BlockState,
+    notes: List<Note>,
+    onCopyBlock: (String) -> Unit,
+    content: @Composable () -> Unit
+) {
+    val interactionSource = remember { MutableInteractionSource() }
+    val pressed by interactionSource.collectIsPressedAsState()
+    val scale by animateFloatAsState(
+        targetValue = if (pressed) 0.985f else 1f,
+        label = "preview-press-scale"
+    )
+    val alpha by animateFloatAsState(
+        targetValue = if (pressed) 0.9f else 1f,
+        label = "preview-press-alpha"
+    )
+    Box(
+        modifier = Modifier
+            .graphicsLayer {
+                scaleX = scale
+                scaleY = scale
+                this.alpha = alpha
+            }
+            .combinedClickable(
+                interactionSource = interactionSource,
+                indication = null,
+                onClick = {},
+                onLongClick = {
+                    val text = blockPreviewText(block, notes)
+                    if (text.isNotBlank()) onCopyBlock(text)
+                }
+            )
+    ) {
+        content()
+    }
+}
+
+@Composable
+private fun KanbanPreview(
+    block: KanbanBlock,
+    onAddCard: (Int) -> Unit,
+    onUpdateCardText: (Int, Int, String) -> Unit,
+    onMoveCard: (Int, Int, Int) -> Unit
+) {
+    Row(
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
+        modifier = Modifier.horizontalScroll(rememberScrollState())
+    ) {
+        block.columns.forEachIndexed { columnIndex, col ->
             Surface(
-                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f),
+                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
                 shape = MaterialTheme.shapes.medium
             ) {
-                Column(Modifier.padding(8.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                Column(
+                    modifier = Modifier.width(180.dp).padding(10.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
                     Text(col.title, style = MaterialTheme.typography.labelLarge)
-                    col.cards.take(3).forEach { card ->
-                        Text("• $card", style = MaterialTheme.typography.bodySmall)
+                    col.cards.forEachIndexed { cardIndex, card ->
+                        Surface(
+                            color = MaterialTheme.colorScheme.surface.copy(alpha = 0.85f),
+                            shape = MaterialTheme.shapes.small
+                        ) {
+                            Column {
+                                TextField(
+                                    value = card,
+                                    onValueChange = { text ->
+                                        onUpdateCardText(columnIndex, cardIndex, text)
+                                    },
+                                    textStyle = MaterialTheme.typography.bodySmall,
+                                    singleLine = true,
+                                    colors = TextFieldDefaults.colors(
+                                        focusedContainerColor = Color.Transparent,
+                                        unfocusedContainerColor = Color.Transparent,
+                                        focusedIndicatorColor = Color.Transparent,
+                                        unfocusedIndicatorColor = Color.Transparent
+                                    ),
+                                    modifier = Modifier.fillMaxWidth()
+                                )
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.End
+                                ) {
+                                    if (columnIndex > 0) {
+                                        IconButton(
+                                            onClick = { onMoveCard(columnIndex, columnIndex - 1, cardIndex) }
+                                        ) {
+                                            Icon(
+                                                imageVector = SimpleIcons.ArrowLeft,
+                                                contentDescription = null
+                                            )
+                                        }
+                                    }
+                                    if (columnIndex < block.columns.lastIndex) {
+                                        IconButton(
+                                            onClick = { onMoveCard(columnIndex, columnIndex + 1, cardIndex) }
+                                        ) {
+                                            Icon(
+                                                imageVector = SimpleIcons.ArrowRight,
+                                                contentDescription = null
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    TextButton(
+                        onClick = { onAddCard(columnIndex) },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text(stringResource(Res.string.note_block_add_card))
                     }
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun LinkedNoteDialog(
+    note: Note,
+    onDismiss: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        confirmButton = {
+            TextButton(onClick = onDismiss) {
+                Text(stringResource(Res.string.settings_close))
+            }
+        },
+        title = {
+            Text(note.title.ifBlank { stringResource(Res.string.note_editor_untitled) })
+        },
+        text = {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(max = 360.dp)
+                    .verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                val linkedBlocks = if (note.blocks.isNotEmpty()) {
+                    note.blocks.map { block ->
+                        when (block) {
+                            is TextBlock -> BlockState(
+                                id = block.id,
+                                type = block.type,
+                                value = TextFieldValue(block.text),
+                                checked = block.checked
+                            )
+                            is DividerBlock -> BlockState(
+                                id = block.id,
+                                type = NoteBlockType.DIVIDER,
+                                value = TextFieldValue("")
+                            )
+                            is TableBlock -> BlockState(
+                                id = block.id,
+                                type = NoteBlockType.TABLE,
+                                value = TextFieldValue(""),
+                                table = block
+                            )
+                            is KanbanBlock -> BlockState(
+                                id = block.id,
+                                type = NoteBlockType.KANBAN,
+                                value = TextFieldValue(""),
+                                kanban = block
+                            )
+                            is AttachmentBlock -> BlockState(
+                                id = block.id,
+                                type = NoteBlockType.ATTACHMENT,
+                                value = TextFieldValue(block.uri),
+                                attachment = block
+                            )
+                            is NoteLinkBlock -> BlockState(
+                                id = block.id,
+                                type = NoteBlockType.NOTE_LINK,
+                                value = TextFieldValue(""),
+                                noteLinkId = block.noteId
+                            )
+                        }
+                    }
+                } else {
+                    defaultBlocksFromContent(note.content).map { block ->
+                        val draft = block as TextBlock
+                        BlockState(
+                            id = draft.id,
+                            type = draft.type,
+                            value = TextFieldValue(draft.text),
+                            checked = draft.checked
+                        )
+                    }
+                }
+                NoteBlocksPreview(
+                    blocks = linkedBlocks,
+                    notes = emptyList(),
+                    onToggleTodo = { _, _ -> },
+                    onCopyBlock = {},
+                    onAddKanbanCard = { _, _ -> },
+                    onUpdateKanbanCardText = { _, _, _, _ -> },
+                    onMoveKanbanCard = { _, _, _, _ -> },
+                    onOpenAttachment = {},
+                    onOpenLinkedNote = {}
+                )
+            }
+        }
+    )
+}
+
+private fun blockPreviewText(block: BlockState, notes: List<Note>): String {
+    return when (block.type) {
+        NoteBlockType.HEADING_1,
+        NoteBlockType.HEADING_2,
+        NoteBlockType.HEADING_3,
+        NoteBlockType.PARAGRAPH,
+        NoteBlockType.QUOTE,
+        NoteBlockType.CODE,
+        NoteBlockType.CALLOUT -> block.value.text
+        NoteBlockType.BULLET -> "• ${block.value.text}"
+        NoteBlockType.NUMBERED -> block.value.text
+        NoteBlockType.TODO -> "${if (block.checked) "[x]" else "[ ]"} ${block.value.text}"
+        NoteBlockType.DIVIDER -> "—"
+        NoteBlockType.TABLE -> block.table?.cells?.joinToString("\n") { row -> row.joinToString(" | ") }.orEmpty()
+        NoteBlockType.KANBAN -> block.kanban?.columns?.joinToString("\n") { col ->
+            "${col.title}: ${col.cards.joinToString(", ")}"
+        }.orEmpty()
+        NoteBlockType.ATTACHMENT -> block.attachment?.name ?: block.value.text
+        NoteBlockType.NOTE_LINK -> notes.firstOrNull { it.id == block.noteLinkId }?.title ?: ""
     }
 }
 

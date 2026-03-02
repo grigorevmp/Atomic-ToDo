@@ -8,6 +8,7 @@ import com.kyant.backdrop.backdrops.LayerBackdrop
 expect fun PlatformBottomBar(
     tab: AppTab,
     onTab: (AppTab) -> Unit,
+    visibleTabs: List<AppTab>,
     createActions: List<CreateAction>,
     enableEffects: Boolean,
     backdrop: LayerBackdrop,

@@ -31,6 +31,7 @@ import com.grigorevmp.simpletodo.ui.components.PlatformBottomBar
 import com.grigorevmp.simpletodo.ui.components.AddIcon
 import com.grigorevmp.simpletodo.ui.home.HomeScreen
 import com.grigorevmp.simpletodo.ui.notes.NotesScreen
+import com.grigorevmp.simpletodo.ui.projects.ProjectsScreen
 import com.grigorevmp.simpletodo.ui.settings.SettingsScreen
 import com.grigorevmp.simpletodo.ui.theme.DinoTheme
 import com.grigorevmp.simpletodo.platform.PlatformSystemBars
@@ -75,15 +76,64 @@ fun App() {
         val navController = rememberNavController()
         val backStack by navController.currentBackStackEntryAsState()
         val currentRoute = backStack?.destination?.route ?: "home"
-        val iosRoute = remember { androidx.compose.runtime.mutableStateOf("home") }
+        val primaryVisibleTabs = buildList {
+            if (prefs.showHomeTab) add(AppTab.HOME)
+            if (prefs.showNotesTab) add(AppTab.NOTES)
+            if (prefs.showProjectsTab) add(AppTab.PROJECTS)
+        }
+        val fallbackTab = primaryVisibleTabs.firstOrNull() ?: AppTab.SETTINGS
+        val visibleTabs = primaryVisibleTabs + AppTab.SETTINGS
+        val fallbackRoute = when (fallbackTab) {
+            AppTab.HOME -> "home"
+            AppTab.NOTES -> "notes"
+            AppTab.PROJECTS -> "projects"
+            AppTab.SETTINGS -> "settings"
+        }
+        val notesBackRoute = when {
+            prefs.showHomeTab -> "home"
+            prefs.showProjectsTab -> "projects"
+            else -> "settings"
+        }
+        val projectsBackRoute = when {
+            prefs.showHomeTab -> "home"
+            prefs.showNotesTab -> "notes"
+            else -> "settings"
+        }
+        val iosRoute = remember { androidx.compose.runtime.mutableStateOf(fallbackRoute) }
         val activeRoute = if (isIos) iosRoute.value else currentRoute
+        val isRouteVisible = remember(
+            prefs.showHomeTab,
+            prefs.showNotesTab,
+            prefs.showProjectsTab
+        ) {
+            { route: String ->
+                when (route) {
+                    "home" -> prefs.showHomeTab
+                    "notes" -> prefs.showNotesTab
+                    "projects" -> prefs.showProjectsTab
+                    "settings" -> true
+                    else -> true
+                }
+            }
+        }
+        LaunchedEffect(activeRoute, fallbackRoute, prefs.showHomeTab, prefs.showNotesTab, prefs.showProjectsTab) {
+            if (!isRouteVisible(activeRoute)) {
+                if (isIos) {
+                    iosRoute.value = fallbackRoute
+                } else {
+                    navController.navigate(fallbackRoute) { launchSingleTop = true }
+                }
+            }
+        }
         val tab = when (activeRoute) {
             "settings" -> AppTab.SETTINGS
             "notes" -> AppTab.NOTES
+            "projects" -> AppTab.PROJECTS
             else -> AppTab.HOME
         }
         val createTaskSignal = remember { androidx.compose.runtime.mutableIntStateOf(0) }
         val createNoteSignal = remember { androidx.compose.runtime.mutableIntStateOf(0) }
+        val createProjectSignal = remember { androidx.compose.runtime.mutableIntStateOf(0) }
         var notesEditorVisible by remember { androidx.compose.runtime.mutableStateOf(false) }
         val openNoteId = remember { androidx.compose.runtime.mutableStateOf<String?>(null) }
         val backgroundColor = MaterialTheme.colorScheme.background
@@ -113,7 +163,26 @@ fun App() {
                                     createNoteSignal = createNoteSignal.intValue,
                                     onCreateNoteHandled = { createNoteSignal.intValue = 0 },
                                     openNoteId = openNoteId.value,
-                                    onOpenNoteHandled = { openNoteId.value = null }
+                                    onOpenNoteHandled = { openNoteId.value = null },
+                                    onBackFromRoot = {
+                                        if (iosRoute.value != notesBackRoute) {
+                                            iosRoute.value = notesBackRoute
+                                        }
+                                    }
+                                )
+                                "projects" -> ProjectsScreen(
+                                    repo = component.repo,
+                                    createProjectSignal = createProjectSignal.intValue,
+                                    onCreateProjectHandled = { createProjectSignal.intValue = 0 },
+                                    onEditNote = { noteId ->
+                                        openNoteId.value = noteId
+                                        iosRoute.value = "notes"
+                                    },
+                                    onBackFromRoot = {
+                                        if (iosRoute.value != projectsBackRoute) {
+                                            iosRoute.value = projectsBackRoute
+                                        }
+                                    }
                                 )
                                 "settings" -> SettingsScreen(component.repo)
                                 else -> HomeScreen(
@@ -149,10 +218,33 @@ fun App() {
                                     onCreateNoteHandled = { createNoteSignal.intValue = 0 },
                                     openNoteId = openNoteId.value,
                                     onOpenNoteHandled = { openNoteId.value = null },
-                                    onEditorVisibleChange = { notesEditorVisible = it }
+                                    onEditorVisibleChange = { notesEditorVisible = it },
+                                    onBackFromRoot = {
+                                        if (currentRoute != notesBackRoute) {
+                                            navController.navigate(notesBackRoute) { launchSingleTop = true }
+                                        }
+                                    }
                                 )
                             }
                             composable("settings") { SettingsScreen(component.repo) }
+                            composable("projects") {
+                                ProjectsScreen(
+                                    repo = component.repo,
+                                    createProjectSignal = createProjectSignal.intValue,
+                                    onCreateProjectHandled = { createProjectSignal.intValue = 0 },
+                                    onEditNote = { noteId ->
+                                        openNoteId.value = noteId
+                                        if (currentRoute != "notes") {
+                                            navController.navigate("notes") { launchSingleTop = true }
+                                        }
+                                    },
+                                    onBackFromRoot = {
+                                        if (currentRoute != projectsBackRoute) {
+                                            navController.navigate(projectsBackRoute) { launchSingleTop = true }
+                                        }
+                                    }
+                                )
+                            }
                         }
                     }
                 }
@@ -161,9 +253,13 @@ fun App() {
                     PlatformBottomBar(
                         tab = tab,
                         onTab = { target ->
+                            if (target != AppTab.SETTINGS && target !in visibleTabs) {
+                                return@PlatformBottomBar
+                            }
                             val route = when (target) {
                                 AppTab.HOME -> "home"
                                 AppTab.NOTES -> "notes"
+                                AppTab.PROJECTS -> "projects"
                                 AppTab.SETTINGS -> "settings"
                             }
                             if (isIos) {
@@ -172,6 +268,7 @@ fun App() {
                                 navController.navigate(route) { launchSingleTop = true }
                             }
                         },
+                        visibleTabs = visibleTabs,
                         createActions = when (tab) {
                             AppTab.HOME -> listOf(
                                 CreateAction(
@@ -202,6 +299,22 @@ fun App() {
                                             navController.navigate("notes") { launchSingleTop = true }
                                         }
                                         createNoteSignal.intValue += 1
+                                    }
+                                )
+                            )
+                            AppTab.PROJECTS -> listOf(
+                                CreateAction(
+                                    id = "new_project",
+                                    label = stringResource(Res.string.action_new),
+                                    contentDescription = "Create project",
+                                    icon = AddIcon,
+                                    onClick = {
+                                        if (isIos) {
+                                            iosRoute.value = "projects"
+                                        } else if (currentRoute != "projects") {
+                                            navController.navigate("projects") { launchSingleTop = true }
+                                        }
+                                        createProjectSignal.intValue += 1
                                     }
                                 )
                             )

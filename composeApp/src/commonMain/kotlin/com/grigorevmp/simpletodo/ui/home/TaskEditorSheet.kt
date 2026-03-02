@@ -63,6 +63,7 @@ import androidx.compose.ui.unit.dp
 import com.grigorevmp.simpletodo.data.TodoRepository
 import com.grigorevmp.simpletodo.model.Importance
 import com.grigorevmp.simpletodo.model.Note
+import com.grigorevmp.simpletodo.model.Project
 import com.grigorevmp.simpletodo.model.Subtask
 import com.grigorevmp.simpletodo.model.Tag
 import com.grigorevmp.simpletodo.model.TodoTask
@@ -107,6 +108,10 @@ import simpletodo.composeapp.generated.resources.task_no_tag
 import simpletodo.composeapp.generated.resources.task_tag_select
 import simpletodo.composeapp.generated.resources.task_no_note
 import simpletodo.composeapp.generated.resources.task_note_label
+import simpletodo.composeapp.generated.resources.task_no_project
+import simpletodo.composeapp.generated.resources.task_no_status
+import simpletodo.composeapp.generated.resources.task_project_status_title
+import simpletodo.composeapp.generated.resources.task_project_title
 import simpletodo.composeapp.generated.resources.task_select_note
 import simpletodo.composeapp.generated.resources.search_placeholder
 import simpletodo.composeapp.generated.resources.task_close
@@ -116,6 +121,7 @@ import simpletodo.composeapp.generated.resources.task_close
 fun TaskEditorSheet(
     repo: TodoRepository,
     prefsTagList: List<Tag>,
+    projects: List<Project>,
     notes: List<Note>,
     initial: TodoTask?,
     onDismiss: () -> Unit
@@ -125,6 +131,8 @@ fun TaskEditorSheet(
     var plan by remember { mutableStateOf(initial?.plan ?: "") }
     var importance by remember { mutableStateOf(initial?.importance ?: Importance.NORMAL) }
     var tagId by remember { mutableStateOf(initial?.tagId) }
+    var projectId by remember { mutableStateOf(initial?.projectId) }
+    var projectStatusId by remember { mutableStateOf(initial?.projectStatusId) }
     var noteId by remember { mutableStateOf(initial?.noteId) }
     var deadline by remember { mutableStateOf(initial?.deadline) }
     var plannedAt by remember { mutableStateOf(initial?.plannedAt) }
@@ -143,6 +151,13 @@ fun TaskEditorSheet(
     val scrollState = rememberScrollState()
     val defaultSubtaskLabel = stringResource(Res.string.task_subtask_default)
     val newSubtaskLabel = stringResource(Res.string.task_new_subtask_default)
+    val projectStatuses = remember(projectId, projects) {
+        projects.firstOrNull { it.id == projectId }?.statuses.orEmpty()
+    }
+
+    if (projectStatusId != null && projectStatuses.none { it.id == projectStatusId }) {
+        projectStatusId = null
+    }
 
     ModalBottomSheet(onDismissRequest = onDismiss) {
         Box(
@@ -243,6 +258,30 @@ fun TaskEditorSheet(
                                         onPick = { tagId = it })
 
                                     Spacer(modifier = Modifier.height(8.dp))
+                                    Text(stringResource(Res.string.task_project_title), style = MaterialTheme.typography.titleMedium)
+                                    ProjectPicker(
+                                        projects = projects,
+                                        currentId = projectId,
+                                        onPick = {
+                                            projectId = it
+                                            if (it == null) {
+                                                projectStatusId = null
+                                            } else if (projectStatuses.none { status -> status.id == projectStatusId }) {
+                                                projectStatusId = null
+                                            }
+                                        }
+                                    )
+                                    if (projectId != null) {
+                                        Spacer(modifier = Modifier.height(8.dp))
+                                        Text(stringResource(Res.string.task_project_status_title), style = MaterialTheme.typography.titleMedium)
+                                        ProjectStatusPicker(
+                                            statuses = projectStatuses,
+                                            currentId = projectStatusId,
+                                            onPick = { projectStatusId = it }
+                                        )
+                                    }
+
+                                    Spacer(modifier = Modifier.height(8.dp))
                                     Text(
                                         stringResource(Res.string.task_linked_note_label),
                                         style = MaterialTheme.typography.titleMedium
@@ -338,7 +377,9 @@ fun TaskEditorSheet(
                                                 deadline = deadline,
                                                 importance = importance,
                                                 tagId = tagId,
-                                                subtasks = cleanedSubtasks
+                                                subtasks = cleanedSubtasks,
+                                                projectId = projectId,
+                                                projectStatusId = projectStatusId
                                             )
                                         } else {
                                             repo.updateTask(
@@ -351,6 +392,8 @@ fun TaskEditorSheet(
                                                     deadline = deadline,
                                                     importance = importance,
                                                     tagId = tagId,
+                                                    projectId = projectId,
+                                                    projectStatusId = projectStatusId,
                                                     subtasks = cleanedSubtasks
                                                 )
                                             )
@@ -373,6 +416,92 @@ fun TaskEditorSheet(
                         )
                     }
                 }
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun ProjectPicker(
+    projects: List<Project>,
+    currentId: String?,
+    onPick: (String?) -> Unit
+) {
+    var expanded by remember { mutableStateOf(false) }
+    val selected = projects.firstOrNull { it.id == currentId }?.name
+        ?: stringResource(Res.string.task_no_project)
+    ExposedDropdownMenuBox(
+        expanded = expanded,
+        onExpandedChange = { expanded = !expanded }
+    ) {
+        OutlinedTextField(
+            value = selected,
+            onValueChange = {},
+            readOnly = true,
+            label = { Text(stringResource(Res.string.task_project_title)) },
+            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded) },
+            modifier = Modifier.fillMaxWidth().menuAnchor()
+        )
+        ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+            DropdownMenuItem(
+                text = { Text(stringResource(Res.string.task_no_project)) },
+                onClick = {
+                    expanded = false
+                    onPick(null)
+                }
+            )
+            projects.forEach { project ->
+                DropdownMenuItem(
+                    text = { Text(project.name) },
+                    onClick = {
+                        expanded = false
+                        onPick(project.id)
+                    }
+                )
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun ProjectStatusPicker(
+    statuses: List<com.grigorevmp.simpletodo.model.ProjectStatus>,
+    currentId: String?,
+    onPick: (String?) -> Unit
+) {
+    var expanded by remember { mutableStateOf(false) }
+    val selected = statuses.firstOrNull { it.id == currentId }?.name
+        ?: stringResource(Res.string.task_no_status)
+    ExposedDropdownMenuBox(
+        expanded = expanded,
+        onExpandedChange = { expanded = !expanded }
+    ) {
+        OutlinedTextField(
+            value = selected,
+            onValueChange = {},
+            readOnly = true,
+            label = { Text(stringResource(Res.string.task_project_status_title)) },
+            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded) },
+            modifier = Modifier.fillMaxWidth().menuAnchor()
+        )
+        ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+            DropdownMenuItem(
+                text = { Text(stringResource(Res.string.task_no_status)) },
+                onClick = {
+                    expanded = false
+                    onPick(null)
+                }
+            )
+            statuses.forEach { status ->
+                DropdownMenuItem(
+                    text = { Text(status.name) },
+                    onClick = {
+                        expanded = false
+                        onPick(status.id)
+                    }
+                )
             }
         }
     }

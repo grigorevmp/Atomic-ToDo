@@ -2,6 +2,7 @@
 <resources>
     <string name="nav_home">Домой</string>
     <string name="nav_notes">Заметки</string>
+    <string name="nav_projects">Проекты</string>
     <string name="nav_settings">Настр.</string>
     <string name="action_new">Новая</string>
 
@@ -60,6 +61,8 @@
     <string name="settings_language_system">Системный</string>
     <string name="settings_language_en">English</string>
     <string name="settings_language_ru">Русский</string>
+    <string name="settings_sections_title">Разделы приложения</string>
+    <string name="settings_sections_desc">Отключённые разделы скрываются из нижнего бара. Минимум один раздел всегда включён.</string>
     <string name="settings_data_title">Импорт / экспорт</string>
     <string name="settings_data_export">Экспорт данных</string>
     <string name="settings_data_import">Импорт данных</string>
@@ -138,12 +141,12 @@
     <string name="home_overdue">Просрочено</string>
     <string name="home_in_days">Через %1$s дней</string>
     <string name="home_planned_earlier">Запланированы ранее</string>
-    <string name="home_motivation_1">Малые шаги, большой разгон</string>
-    <string name="home_motivation_2">Сфокусируйся на следующем деле</string>
-    <string name="home_motivation_3">Сделано лучше идеального</string>
-    <string name="home_motivation_4">Одно дело за раз</string>
-    <string name="home_motivation_5">Сделай этот день значимым</string>
-    <string name="home_motivation_6">Освободи следующий блок</string>
+    <string name="home_motivation_1">Даже маленький шаг двигает вперёд.</string>
+    <string name="home_motivation_2">Начни с ближайшей задачи.</string>
+    <string name="home_motivation_3">Сделанное важнее идеального.</string>
+    <string name="home_motivation_4">Делай по одной задаче за раз.</string>
+    <string name="home_motivation_5">Сделай сегодня чуть лучше, чем вчера.</string>
+    <string name="home_motivation_6">Закрой текущий блок и переходи к следующему.</string>
     <string name="home_favorite_notes">Избранные заметки</string>
     <string name="home_no_deadline">Без дедлайна</string>
 
@@ -205,6 +208,14 @@
     <string name="task_delete">Удалить</string>
     <string name="task_pinned">Закреплено</string>
     <string name="home_pinned_tasks">Закрепленные задачи</string>
+    <string name="task_move_to_project">Переместить в проект</string>
+    <string name="task_remove_from_project">Убрать из проекта</string>
+    <string name="task_project_title">Проект</string>
+    <string name="task_no_project">Без проекта</string>
+    <string name="task_no_project_selected">Без проекта (выбрано)</string>
+    <string name="task_project_selected">%1$s (выбрано)</string>
+    <string name="task_project_status_title">Статус проекта</string>
+    <string name="task_no_status">Без статуса</string>
 
     <string name="note_editor_new">Новая заметка</string>
     <string name="note_editor_edit">Редактировать</string>
@@ -222,9 +233,13 @@
     <string name="note_editor_create">Создать</string>
     <string name="note_editor_save">Сохранить</string>
     <string name="note_editor_save_cd">Сохранить</string>
+    <string name="note_editor_copy_all">Скопировать все</string>
     <string name="note_block_add">Добавить блок</string>
+    <string name="note_block_add_above">Добавить выше</string>
     <string name="note_block_duplicate">Дублировать</string>
     <string name="note_block_delete">Удалить блок</string>
+    <string name="note_block_move_up">Сдвинуть вверх</string>
+    <string name="note_block_move_down">Сдвинуть вниз</string>
     <string name="note_block_turn_into">Преобразовать</string>
     <string name="note_slash_hint">Введите / для блоков</string>
     <string name="note_block_h1">Заголовок 1</string>
@@ -237,7 +252,7 @@
     <string name="note_block_quote">Цитата</string>
     <string name="note_block_code">Код</string>
     <string name="note_block_divider">Разделитель</string>
-    <string name="note_block_callout">Callout</string>
+    <string name="note_block_callout">Акцент</string>
     <string name="note_block_table">Таблица</string>
     <string name="note_block_kanban">Канбан</string>
     <string name="note_block_attachment">Вложение</string>
@@ -248,6 +263,7 @@
     <string name="note_block_add_column_label">Добавить колонку</string>
     <string name="note_block_pick_file">Выбрать файл</string>
     <string name="note_block_open_file">Открыть</string>
+    <string name="note_block_go_to">Перейти</string>
     <string name="note_block_linked_from">Связано с</string>
 
     <string name="notes_sort_title">Фильтры</string>
@@ -290,6 +306,28 @@
     <string name="notes_count">%1$s заметок</string>
     <string name="notes_expand_cd">Развернуть</string>
     <string name="notes_collapse_cd">Свернуть</string>
+    <string name="projects_title">Проекты</string>
+    <string name="projects_create_cd">Создать проект</string>
+    <string name="projects_empty">Создайте первый проект</string>
+    <string name="projects_tab_all">Все</string>
+    <string name="projects_tab_kanban">Канбан</string>
+    <string name="projects_show_completed">Показывать завершенные</string>
+    <string name="projects_completed_column">Завершенные (%1$s)</string>
+    <string name="projects_new_title">Новый проект</string>
+    <string name="projects_name_label">Название проекта</string>
+    <string name="projects_statuses_label">Статусы (через запятую)</string>
+    <string name="projects_statuses_title">Статусы</string>
+    <string name="projects_status_input">Название статуса</string>
+    <string name="projects_status_add">Статус</string>
+    <string name="projects_statuses_default">Сделать, В процессе, Готово</string>
+    <string name="projects_move_task_title">Переместить задачу</string>
+    <string name="projects_action_done">Готово</string>
+    <string name="projects_action_undo">Отменить</string>
+    <string name="projects_action_edit">Изменить</string>
+    <string name="projects_action_move">Переместить</string>
+    <string name="projects_sections_title">Показывать разделы</string>
+    <string name="projects_section_no_status">Без статуса</string>
+    <string name="projects_section_completed">Завершенные</string>
 
     <string name="task_link_label">Связанная задача</string>
     <string name="task_select_task">Выбрать задачу</string>
