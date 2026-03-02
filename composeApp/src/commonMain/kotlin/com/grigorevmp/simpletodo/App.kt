@@ -46,14 +46,17 @@ fun App() {
 
     val dark = isSystemInDarkTheme()
     val prefs by component.repo.prefs.collectAsState()
+
     LaunchedEffect(Unit) {
         component.repo.refreshNotificationsOnLaunch()
     }
     LaunchedEffect(prefs.language) {
         applyAppLanguage(prefs.language)
     }
+
     val mode = prefs.themeMode
     val forceLight = prefs.disableDarkTheme
+
     val isDark = if (forceLight) {
         false
     } else {
@@ -62,17 +65,25 @@ fun App() {
             else -> dark
         }
     }
+
     val effectiveMode = if (forceLight && mode == ThemeMode.DIM) ThemeMode.SYSTEM else mode
-    DinoTheme(dark = isDark, mode = effectiveMode, authorAccentIndex = prefs.authorAccentIndex) {
+
+    DinoTheme(
+        dark = isDark,
+        mode = effectiveMode,
+        authorAccentIndex = prefs.authorAccentIndex
+    ) {
         val navBarColor = if (isDark) {
             MaterialTheme.colorScheme.background
         } else {
             MaterialTheme.colorScheme.surface
         }
+
         PlatformSystemBars(
             isDark = isDark,
             backgroundColor = navBarColor
         )
+
         val navController = rememberNavController()
         val backStack by navController.currentBackStackEntryAsState()
         val currentRoute = backStack?.destination?.route ?: "home"
@@ -211,6 +222,7 @@ fun App() {
                                     }
                                 )
                             }
+
                             composable("notes") {
                                 NotesScreen(
                                     repo = component.repo,
@@ -226,7 +238,11 @@ fun App() {
                                     }
                                 )
                             }
-                            composable("settings") { SettingsScreen(component.repo) }
+
+                            composable("settings") {
+                                SettingsScreen(component.repo)
+                            }
+
                             composable("projects") {
                                 ProjectsScreen(
                                     repo = component.repo,

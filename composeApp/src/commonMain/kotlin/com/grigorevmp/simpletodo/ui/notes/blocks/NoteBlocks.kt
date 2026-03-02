@@ -13,40 +13,6 @@ data class NoteBlockDraft(
     val checked: Boolean = false
 )
 
-fun draftFromBlock(block: NoteBlock): NoteBlockDraft = when (block) {
-    is TextBlock -> NoteBlockDraft(
-        id = block.id,
-        type = block.type,
-        text = block.text,
-        checked = block.checked
-    )
-    is DividerBlock -> NoteBlockDraft(
-        id = block.id,
-        type = NoteBlockType.DIVIDER,
-        text = "",
-        checked = false
-    )
-    else -> NoteBlockDraft(
-        id = block.id,
-        type = block.type,
-        text = "",
-        checked = false
-    )
-}
-
-fun blockFromDraft(draft: NoteBlockDraft): NoteBlock {
-    return if (draft.type == NoteBlockType.DIVIDER) {
-        DividerBlock(id = draft.id)
-    } else {
-        TextBlock(
-            id = draft.id,
-            text = draft.text,
-            type = draft.type,
-            checked = draft.checked
-        )
-    }
-}
-
 fun defaultBlocksFromContent(content: String): List<NoteBlock> {
     val text = content.trim()
     return if (text.isBlank()) {

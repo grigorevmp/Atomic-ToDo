@@ -11,6 +11,14 @@ data class ChangelogEntry(
 
 val CHANGELOG_ENTRIES = listOf(
     ChangelogEntry(
+        version = "1.1.1",
+        title = "Календарь и заметки",
+        buildType = BuildType.RELEASE,
+        changes = listOf(
+            "Исправления ошибок",
+        )
+    ),
+    ChangelogEntry(
         version = "1.1.0",
         title = "Календарь и заметки",
         buildType = BuildType.RELEASE,

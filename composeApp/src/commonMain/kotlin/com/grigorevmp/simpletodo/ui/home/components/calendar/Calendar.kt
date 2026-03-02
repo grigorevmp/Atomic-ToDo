@@ -51,7 +51,7 @@ import com.grigorevmp.simpletodo.ui.components.SimpleIcons
 import com.grigorevmp.simpletodo.ui.components.FadingScrollEdges
 import com.grigorevmp.simpletodo.ui.components.itemPlacement
 import com.grigorevmp.simpletodo.ui.home.EmptyState
-import com.grigorevmp.simpletodo.ui.home.TaskCard
+import com.grigorevmp.simpletodo.ui.home.components.TaskCard
 import com.grigorevmp.simpletodo.util.nowInstant
 import com.kyant.backdrop.backdrops.LayerBackdrop
 import com.kyant.backdrop.backdrops.rememberLayerBackdrop
