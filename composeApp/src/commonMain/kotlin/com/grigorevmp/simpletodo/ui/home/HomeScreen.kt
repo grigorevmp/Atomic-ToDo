@@ -12,8 +12,10 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -38,6 +40,7 @@ import com.grigorevmp.simpletodo.ui.home.components.MeteorHeader
 import com.grigorevmp.simpletodo.ui.home.components.MoveTaskToProjectDialog
 import com.grigorevmp.simpletodo.ui.home.components.NotePreviewDialog
 import com.grigorevmp.simpletodo.ui.home.components.SegmentedTabs
+import com.grigorevmp.simpletodo.ui.home.components.SegmentedTabItem
 import com.grigorevmp.simpletodo.ui.home.components.SortSheet
 import com.grigorevmp.simpletodo.ui.home.components.TagFilters
 import com.grigorevmp.simpletodo.ui.home.components.TaskDetailsSheet
@@ -49,16 +52,19 @@ import com.grigorevmp.simpletodo.ui.home.components.calendar.CalendarTab
 import com.kyant.backdrop.backdrops.layerBackdrop
 import com.kyant.backdrop.backdrops.rememberLayerBackdrop
 import kotlinx.coroutines.launch
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.atStartOfDayIn
 import org.jetbrains.compose.resources.stringResource
 import simpletodo.composeapp.generated.resources.Res
 import simpletodo.composeapp.generated.resources.home_empty_inbox_body
 import simpletodo.composeapp.generated.resources.home_empty_inbox_title
+import simpletodo.composeapp.generated.resources.home_empty_timeline_body
+import simpletodo.composeapp.generated.resources.home_empty_timeline_title
+import simpletodo.composeapp.generated.resources.home_inbox_intro_body
+import simpletodo.composeapp.generated.resources.home_inbox_intro_title
 import simpletodo.composeapp.generated.resources.home_motivation_1
-import simpletodo.composeapp.generated.resources.home_motivation_2
-import simpletodo.composeapp.generated.resources.home_motivation_3
-import simpletodo.composeapp.generated.resources.home_motivation_4
-import simpletodo.composeapp.generated.resources.home_motivation_5
-import simpletodo.composeapp.generated.resources.home_motivation_6
+import simpletodo.composeapp.generated.resources.settings_done
 import simpletodo.composeapp.generated.resources.tab_calendar
 import simpletodo.composeapp.generated.resources.tab_inbox
 import simpletodo.composeapp.generated.resources.tab_timeline
@@ -80,10 +86,18 @@ fun HomeScreen(
 
     var showEditor by remember { mutableStateOf(false) }
     var editTask by remember { mutableStateOf<TodoTask?>(null) }
+    var createInitialPlannedAt by remember { mutableStateOf<kotlinx.datetime.Instant?>(null) }
+    var selectedCalendarDate by remember { mutableStateOf<LocalDate?>(null) }
+    var isCalendarTabActive by remember { mutableStateOf(false) }
 
     LaunchedEffect(createSignal) {
         if (createSignal > 0) {
             editTask = null
+            createInitialPlannedAt = if (isCalendarTabActive && selectedCalendarDate != null) {
+                selectedCalendarDate?.atStartOfDayIn(TimeZone.currentSystemDefault())
+            } else {
+                null
+            }
             showEditor = true
             onCreateHandled()
         }
@@ -96,6 +110,8 @@ fun HomeScreen(
         links = links,
         projects = projects,
         prefs = prefs,
+        onCalendarDateSelected = { selectedCalendarDate = it },
+        onCalendarTabActiveChange = { isCalendarTabActive = it },
         onEditTask = { task ->
             editTask = task
             showEditor = true
@@ -110,6 +126,7 @@ fun HomeScreen(
             projects = projects,
             notes = notes,
             initial = editTask,
+            initialPlannedAt = if (editTask == null) createInitialPlannedAt else null,
             onDismiss = { showEditor = false }
         )
     }
@@ -123,21 +140,15 @@ private fun HomeMainContent(
     links: List<TaskNoteLink>,
     projects: List<Project>,
     prefs: AppPrefs,
+    onCalendarDateSelected: (LocalDate) -> Unit,
+    onCalendarTabActiveChange: (Boolean) -> Unit,
     onEditTask: (TodoTask) -> Unit,
     onEditNote: (String) -> Unit
 ) {
     val scope = rememberCoroutineScope()
     val sorted = remember(tasks, prefs) { repo.sortedTasks(tasks, prefs) }
 
-    val motivations = listOf(
-        stringResource(Res.string.home_motivation_1),
-        stringResource(Res.string.home_motivation_2),
-        stringResource(Res.string.home_motivation_3),
-        stringResource(Res.string.home_motivation_4),
-        stringResource(Res.string.home_motivation_5),
-        stringResource(Res.string.home_motivation_6)
-    )
-    val motivation = remember(motivations) { motivations.random() }
+    val motivation = stringResource(Res.string.home_motivation_1)
     val notesById = remember(notes) { notes.associateBy { it.id } }
     val projectsById = remember(projects) { projects.associateBy { it.id } }
     val favoriteNotes =
@@ -151,6 +162,8 @@ private fun HomeMainContent(
     var detailsTaskId by remember { mutableStateOf<String?>(null) }
     var projectMoveTask by remember { mutableStateOf<TodoTask?>(null) }
     val celebrationTrigger = remember { mutableIntStateOf(0) }
+    var showInboxIntroDialog by remember { mutableStateOf(false) }
+    var previousTasksCount by remember { mutableIntStateOf(tasks.size) }
 
     val filtered = remember(sorted, tagFilter) {
         when (tagFilter) {
@@ -162,10 +175,25 @@ private fun HomeMainContent(
 
     val timelineTasks = filtered.filter { it.deadline != null || it.plannedAt != null }
     val inboxTasks = filtered.filter { it.deadline == null && it.plannedAt == null }
+    val inboxOpenCount = inboxTasks.count { !it.done }
     val backgroundColor = MaterialTheme.colorScheme.background
     val listBackdrop = rememberLayerBackdrop {
         drawRect(backgroundColor)
         drawContent()
+    }
+
+    LaunchedEffect(tasks, prefs.inboxIntroShown) {
+        val isFirstInboxTaskCreated = !prefs.inboxIntroShown &&
+            previousTasksCount == 0 &&
+            tasks.size == 1 &&
+            tasks.firstOrNull()?.let { it.deadline == null && it.plannedAt == null } == true
+        if (isFirstInboxTaskCreated) {
+            showInboxIntroDialog = true
+        }
+        previousTasksCount = tasks.size
+    }
+    LaunchedEffect(tab) {
+        onCalendarTabActiveChange(tab == HomeTab.CALENDAR)
     }
 
     fun notesForTask(task: TodoTask): List<Note> {
@@ -224,9 +252,13 @@ private fun HomeMainContent(
                             TimelineList(
                                 tasks = timelineTasks,
                                 favoriteNotes = favoriteNotes,
-                                emptyStateTitle = if (!timelineHasVisible) "No timeline tasks." else null,
+                                emptyStateTitle = if (!timelineHasVisible) {
+                                    stringResource(Res.string.home_empty_timeline_title)
+                                } else {
+                                    null
+                                },
                                 emptyStateBody = if (!timelineHasVisible) {
-                                    "Add a task with a deadline to see it on the timeline."
+                                    stringResource(Res.string.home_empty_timeline_body)
                                 } else null,
                                 showEmptyMascot = !timelineHasVisible,
                                 onToggleDone = { id ->
@@ -341,6 +373,7 @@ private fun HomeMainContent(
                                 },
                                 onMoveProject = { task -> projectMoveTask = task },
                                 dimScroll = prefs.dimScroll,
+                                onSelectedDateChange = onCalendarDateSelected,
                                 backdrop = listBackdrop
                             )
                         }
@@ -349,9 +382,12 @@ private fun HomeMainContent(
 
                 SegmentedTabs(
                     items = listOf(
-                        stringResource(Res.string.tab_timeline),
-                        stringResource(Res.string.tab_calendar),
-                        stringResource(Res.string.tab_inbox)
+                        SegmentedTabItem(label = stringResource(Res.string.tab_timeline)),
+                        SegmentedTabItem(label = stringResource(Res.string.tab_calendar)),
+                        SegmentedTabItem(
+                            label = stringResource(Res.string.tab_inbox),
+                            badgeCount = inboxOpenCount
+                        )
                     ),
                     selectedIndex = when (tab) {
                         HomeTab.TIMELINE -> 0
@@ -367,9 +403,30 @@ private fun HomeMainContent(
                     },
                     modifier = Modifier
                         .align(Alignment.BottomCenter)
-                        .padding(bottom = 96.dp)
+                        .padding(bottom = 72.dp)
                 )
             }
+        }
+
+        if (showInboxIntroDialog) {
+            AlertDialog(
+                onDismissRequest = {
+                    showInboxIntroDialog = false
+                    scope.launch { repo.setInboxIntroShown(true) }
+                },
+                title = { Text(stringResource(Res.string.home_inbox_intro_title)) },
+                text = { Text(stringResource(Res.string.home_inbox_intro_body)) },
+                confirmButton = {
+                    TextButton(
+                        onClick = {
+                            showInboxIntroDialog = false
+                            scope.launch { repo.setInboxIntroShown(true) }
+                        }
+                    ) {
+                        Text(stringResource(Res.string.settings_done))
+                    }
+                }
+            )
         }
 
         detailsTaskId?.let { id ->

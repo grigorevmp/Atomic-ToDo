@@ -5,13 +5,12 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -24,15 +23,18 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.grigorevmp.simpletodo.model.Note
 import com.grigorevmp.simpletodo.model.Project
 import com.grigorevmp.simpletodo.model.TodoTask
+import com.grigorevmp.simpletodo.ui.components.AppIconId
+import com.grigorevmp.simpletodo.ui.components.EmptyIllustratedState
 import com.grigorevmp.simpletodo.ui.components.FadingScrollEdges
 import org.jetbrains.compose.resources.stringResource
 import simpletodo.composeapp.generated.resources.Res
+import simpletodo.composeapp.generated.resources.nav_projects
 import simpletodo.composeapp.generated.resources.projects_empty
+import simpletodo.composeapp.generated.resources.projects_empty_desc
 import simpletodo.composeapp.generated.resources.projects_title
 
 @Composable
@@ -45,8 +47,11 @@ fun ProjectsListContent(
     onProjectLongClick: (Project) -> Unit
 ) {
     if (projects.isEmpty()) {
-        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            Text(stringResource(Res.string.projects_empty))
+        Column(Modifier.fillMaxSize()) {
+            ProjectsTopBar()
+            EmptyProjectsState(
+                modifier = Modifier.weight(1f)
+            )
         }
         return
     }
@@ -57,7 +62,7 @@ fun ProjectsListContent(
     Box(Modifier.fillMaxSize()) {
         LazyColumn(
             state = listState,
-            contentPadding = PaddingValues(horizontal = 18.dp, vertical = 8.dp),
+            contentPadding = PaddingValues(vertical = 8.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
             item { ProjectsTopBar() }
@@ -65,7 +70,9 @@ fun ProjectsListContent(
             items(projects, key = { it.id }) { project ->
                 val shape = RoundedCornerShape(16.dp)
                 Surface(
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 18.dp),
                     shape = shape,
                     color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.22f)
                 ) {
@@ -101,24 +108,35 @@ fun ProjectsListContent(
 }
 
 @Composable
+private fun EmptyProjectsState() {
+    EmptyProjectsState(modifier = Modifier)
+}
+
+@Composable
+private fun EmptyProjectsState(modifier: Modifier) {
+    EmptyIllustratedState(
+        title = stringResource(Res.string.projects_empty),
+        body = stringResource(Res.string.projects_empty_desc),
+        icon = AppIconId.Projects,
+        iconContentDescription = stringResource(Res.string.nav_projects),
+        modifier = modifier
+    )
+}
+
+@Composable
 private fun ProjectsTopBar() {
-    Column(
-        modifier = Modifier
+    Row(
+        Modifier
             .fillMaxWidth()
-            .padding(top = 14.dp)
+            .padding(start = 18.dp, end = 13.dp)
+            .padding(vertical = 6.dp)
             .height(48.dp),
-        verticalArrangement = Arrangement.Center
+        verticalAlignment = Alignment.CenterVertically
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxHeight()
-                .widthIn(max = 220.dp)
-        ) {
-            Text(
-                stringResource(Res.string.projects_title),
-                style = MaterialTheme.typography.titleLarge,
-                textAlign = TextAlign.Center
-            )
-        }
+        Text(
+            stringResource(Res.string.projects_title),
+            style = MaterialTheme.typography.titleLarge,
+            modifier = Modifier.weight(1f)
+        )
     }
 }

@@ -98,8 +98,9 @@
     <string name="settings_account_soon">В разработке</string>
 
     <string name="settings_status_title">Статус приложения</string>
-    <string name="settings_status_desc">Вы используете бета-версию. Каналы обновлений и телеметрия появятся позже.</string>
+    <string name="settings_status_desc">Вы используете бета-версию.</string>
     <string name="settings_status_badge_beta">Бета</string>
+    <string name="settings_status_badge_stable">Стабильная бета</string>
     <string name="settings_status_badge_local">Локальные данные</string>
 
     <string name="settings_about_title">О приложении</string>
@@ -117,6 +118,8 @@
     <string name="home_empty_timeline_body">Добавьте задачу с дедлайном, чтобы увидеть её в таймлайне</string>
     <string name="home_empty_inbox_title">Нет входящих</string>
     <string name="home_empty_inbox_body">Задачи без дедлайнов появляются здесь</string>
+    <string name="home_inbox_intro_title">Это Входящие</string>
+    <string name="home_inbox_intro_body">Сюда попадают задачи без запланированной даты и дедлайна. Здесь они ждут сортировки.</string>
     <string name="home_app_name">Atomic ToDo</string>
     <string name="home_beta_version">beta 0.7.1</string>
     <string name="home_tags_cd">Теги</string>
@@ -141,12 +144,12 @@
     <string name="home_overdue">Просрочено</string>
     <string name="home_in_days">Через %1$s дней</string>
     <string name="home_planned_earlier">Запланированы ранее</string>
-    <string name="home_motivation_1">Даже маленький шаг двигает вперёд.</string>
-    <string name="home_motivation_2">Начни с ближайшей задачи.</string>
-    <string name="home_motivation_3">Сделанное важнее идеального.</string>
-    <string name="home_motivation_4">Делай по одной задаче за раз.</string>
-    <string name="home_motivation_5">Сделай сегодня чуть лучше, чем вчера.</string>
-    <string name="home_motivation_6">Закрой текущий блок и переходи к следующему.</string>
+    <string name="home_motivation_1">Дорогу осилит идущий</string>
+    <string name="home_motivation_2">Начни с ближайшей задачи</string>
+    <string name="home_motivation_3">Сделанное важнее идеального</string>
+    <string name="home_motivation_4">Делай по одной задаче за раз</string>
+    <string name="home_motivation_5">Сделай сегодня чуть лучше, чем вчера</string>
+    <string name="home_motivation_6">Закрой текущий блок и переходи к следующему</string>
     <string name="home_favorite_notes">Избранные заметки</string>
     <string name="home_no_deadline">Без дедлайна</string>
 
@@ -167,6 +170,11 @@
     <string name="task_deadline_tomorrow">Дедлайн через 1 день</string>
     <string name="task_deadline_in_days">Дедлайн через %1$s дня</string>
     <string name="task_deadline_soon">Дедлайн скоро</string>
+    <string name="date_time_not_set">Не задано</string>
+    <string name="date_time_label">Дата/время: %1$s</string>
+    <string name="date_time_clear">Очистить</string>
+    <string name="date_time_apply">Применить</string>
+    <string name="date_time_select_time">Выберите время</string>
     <string name="hours_one">час</string>
     <string name="hours_few">часа</string>
     <string name="hours_many">часов</string>
@@ -183,6 +191,16 @@
     <string name="task_planned_time_label">Запланированное время</string>
     <string name="task_estimate_label">Оценка времени (часы)</string>
     <string name="task_deadline_label">Дедлайн</string>
+    <string name="task_repeat_title">Повтор</string>
+    <string name="task_repeat_enabled">Повторять задачу</string>
+    <string name="task_repeat_every">Каждые</string>
+    <string name="task_repeat_interval_label">Интервал</string>
+    <string name="task_repeat_unit_label">Единица</string>
+    <string name="task_repeat_unit_minute">Минут</string>
+    <string name="task_repeat_unit_hour">Часов</string>
+    <string name="task_repeat_unit_day">Дней</string>
+    <string name="task_repeat_unit_week">Недель</string>
+    <string name="task_repeat_unit_month">Месяцев</string>
     <string name="task_priority_label">Приоритет</string>
     <string name="task_tag_label">Тег</string>
     <string name="task_linked_note_label">Связанная заметка</string>
@@ -295,7 +313,7 @@
     <string name="notes_favorite_add">Добавить в избранное</string>
     <string name="notes_favorite_remove">Убрать из избранного</string>
     <string name="notes_empty_folder">Папка пуста.</string>
-    <string name="notes_empty_root">Заметок пока нет.</string>
+    <string name="notes_empty_root">Заметок пока нет</string>
     <string name="notes_empty_folder_desc">Создайте заметку или подпапку, чтобы организовать идеи.</string>
     <string name="notes_empty_root_desc">Создайте первую заметку или добавьте папки для порядка.</string>
     <string name="notes_add_folder">Добавить папку</string>
@@ -309,6 +327,7 @@
     <string name="projects_title">Проекты</string>
     <string name="projects_create_cd">Создать проект</string>
     <string name="projects_empty">Создайте первый проект</string>
+    <string name="projects_empty_desc">Добавьте проект, чтобы группировать задачи и заметки</string>
     <string name="projects_tab_all">Все</string>
     <string name="projects_tab_kanban">Канбан</string>
     <string name="projects_show_completed">Показывать завершенные</string>
@@ -318,7 +337,7 @@
     <string name="projects_statuses_label">Статусы (через запятую)</string>
     <string name="projects_statuses_title">Статусы</string>
     <string name="projects_status_input">Название статуса</string>
-    <string name="projects_status_add">Статус</string>
+    <string name="projects_status_add">Добавить</string>
     <string name="projects_statuses_default">Сделать, В процессе, Готово</string>
     <string name="projects_move_task_title">Переместить задачу</string>
     <string name="projects_action_done">Готово</string>

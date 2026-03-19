@@ -70,8 +70,8 @@ android {
         applicationId = "com.grigorevmp.simpletodo"
         minSdk = libs.versions.android.minSdk.get().toInt()
         targetSdk = libs.versions.android.targetSdk.get().toInt()
-        versionCode = 6
-        versionName = "1.1.1"
+        versionCode = 8
+        versionName = "1.2.1"
     }
     packaging {
         resources {
@@ -81,6 +81,7 @@ android {
     buildTypes {
         getByName("release") {
             isMinifyEnabled = false
+            signingConfig = signingConfigs.getByName("debug")
         }
     }
     buildFeatures {

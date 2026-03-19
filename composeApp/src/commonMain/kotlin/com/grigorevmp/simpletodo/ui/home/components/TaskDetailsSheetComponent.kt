@@ -5,31 +5,36 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.luminance
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import com.grigorevmp.simpletodo.model.Importance
 import com.grigorevmp.simpletodo.model.Note
 import com.grigorevmp.simpletodo.model.TodoTask
@@ -53,15 +58,17 @@ import simpletodo.composeapp.generated.resources.home_dates_title
 import simpletodo.composeapp.generated.resources.home_details
 import simpletodo.composeapp.generated.resources.home_estimate
 import simpletodo.composeapp.generated.resources.home_in_days
+import simpletodo.composeapp.generated.resources.home_mark_done
 import simpletodo.composeapp.generated.resources.home_note_plural
 import simpletodo.composeapp.generated.resources.home_note_singular
 import simpletodo.composeapp.generated.resources.home_overdue
 import simpletodo.composeapp.generated.resources.home_subtasks
+import simpletodo.composeapp.generated.resources.home_unmark_done
 import simpletodo.composeapp.generated.resources.hours_short
 import simpletodo.composeapp.generated.resources.task_close
+import simpletodo.composeapp.generated.resources.task_edit
 
 @Composable
-@OptIn(ExperimentalMaterial3Api::class)
 internal fun TaskDetailsSheet(
     task: TodoTask,
     tagName: (String?) -> String?,
@@ -73,25 +80,37 @@ internal fun TaskDetailsSheet(
     onClose: () -> Unit
 ) {
     val iconButtonSize = if (isIos) 44.dp else 48.dp
-    val iconSize = if (isIos) 26.dp else 24.dp
-    val sheetState = rememberModalBottomSheetState(
-        skipPartiallyExpanded = task.plan.isNotBlank() || task.subtasks.isNotEmpty()
-    )
-    ModalBottomSheet(onDismissRequest = onClose, sheetState = sheetState) {
-        Box(Modifier.fillMaxWidth()) {
-            ImportanceFlameBackdrop(
-                importance = task.importance,
-                modifier = Modifier
-                    .matchParentSize()
-                    .padding(8.dp)
-            )
-            LazyColumn(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 18.dp, vertical = 16.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp),
-                contentPadding = PaddingValues(bottom = 16.dp)
-            ) {
+    val backIconSize = if (isIos) 30.dp else 36.dp
+    val isLightTheme = MaterialTheme.colorScheme.background.luminance() > 0.5f
+    val dialogContainerColor = if (isLightTheme) Color.White else MaterialTheme.colorScheme.surface
+    Dialog(
+        onDismissRequest = onClose,
+        properties = DialogProperties(usePlatformDefaultWidth = false)
+    ) {
+        Surface(
+            modifier = Modifier
+                .fillMaxWidth(0.94f)
+                .widthIn(max = 760.dp)
+                .heightIn(max = 820.dp),
+            shape = MaterialTheme.shapes.extraLarge,
+            color = dialogContainerColor,
+            tonalElevation = 6.dp,
+            shadowElevation = 14.dp
+        ) {
+            Box(Modifier.fillMaxWidth().fillMaxHeight()) {
+                ImportanceFlameBackdrop(
+                    importance = task.importance,
+                    modifier = Modifier
+                        .matchParentSize()
+                        .padding(8.dp)
+                )
+                LazyColumn(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 18.dp, vertical = 16.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp),
+                    contentPadding = PaddingValues(bottom = 16.dp)
+                ) {
                 item {
                     Row(
                         Modifier.fillMaxWidth(),
@@ -104,9 +123,10 @@ internal fun TaskDetailsSheet(
                             Icon(
                                 imageVector = SimpleIcons.ArrowLeft,
                                 contentDescription = stringResource(Res.string.task_close),
-                                modifier = Modifier.size(iconSize)
+                                modifier = Modifier.size(backIconSize)
                             )
                         }
+                        Spacer(Modifier.width(8.dp))
                         Text(
                             stringResource(Res.string.home_details),
                             style = MaterialTheme.typography.titleLarge,
@@ -117,31 +137,27 @@ internal fun TaskDetailsSheet(
                 }
 
                 item {
-                    Row(
-                        Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.End
-                    ) {
-                        TextButton(onClick = onEdit) { Text("Редактировать") }
-                        Spacer(Modifier.width(8.dp))
-                        TextButton(onClick = onToggleDone) {
-                            Text(if (task.done) "Снять отметку" else "Отметить выполненным")
-                        }
-                    }
-                }
-
-                item {
+                    val tagLabel = tagName(task.tagId)
                     Box(Modifier.fillMaxWidth()) {
-                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                            Text(task.title, style = MaterialTheme.typography.titleLarge)
+                        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                            Text(
+                                text = task.title,
+                                style = MaterialTheme.typography.titleLarge,
+                                textAlign = TextAlign.Center,
+                                modifier = Modifier.fillMaxWidth()
+                            )
                             Row(
                                 Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.Center,
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                tagName(task.tagId)?.let { name ->
+                                tagLabel?.let { name ->
                                     TagChipLabel(name)
                                 }
                                 if (notes.isNotEmpty()) {
-                                    Spacer(Modifier.width(8.dp))
+                                    if (tagLabel != null) {
+                                        Spacer(Modifier.width(8.dp))
+                                    }
                                     NoteChipLabel(
                                         count = notes.size,
                                         onOpen = onOpenNotes
@@ -226,7 +242,27 @@ internal fun TaskDetailsSheet(
                     }
                 }
 
+                item {
+                    Row(
+                        Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.End
+                    ) {
+                        TextButton(onClick = onEdit) { Text(stringResource(Res.string.task_edit)) }
+                        Spacer(Modifier.width(8.dp))
+                        TextButton(onClick = onToggleDone) {
+                            Text(
+                                if (task.done) {
+                                    stringResource(Res.string.home_unmark_done)
+                                } else {
+                                    stringResource(Res.string.home_mark_done)
+                                }
+                            )
+                        }
+                    }
+                }
+
                 item { Spacer(Modifier.height(8.dp)) }
+                }
             }
         }
     }
@@ -385,7 +421,7 @@ private fun DateInfoCard(
 }
 
 @Composable
-private fun SubtasksInteractive(
+private fun  SubtasksInteractive(
     task: TodoTask,
     onToggleSub: (String) -> Unit
 ) {
@@ -402,10 +438,11 @@ private fun SubtasksInteractive(
                 ) {
                     CircleCheckbox(
                         checked = subtask.done,
-                        onCheckedChange = { onToggleSub(subtask.id) }
+                        onCheckedChange = { onToggleSub(subtask.id) },
+                        modifier = Modifier.padding(vertical = 6.dp)
                     )
-                    Spacer(Modifier.width(6.dp))
-                    Text(subtask.text, style = MaterialTheme.typography.bodySmall)
+                    Spacer(Modifier.width(8.dp))
+                    Text(subtask.text, style = MaterialTheme.typography.bodyMedium)
                 }
             }
         }

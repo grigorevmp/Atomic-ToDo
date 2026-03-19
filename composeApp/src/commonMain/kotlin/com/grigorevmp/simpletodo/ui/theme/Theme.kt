@@ -87,11 +87,40 @@ private fun authorScheme(dark: Boolean, accentIndex: Int): ColorScheme {
     val base = if (dark) Dark else Light
     val accent = authorAccentColors()[accentIndex.coerceIn(0, authorAccentColors().lastIndex)]
     val onAccent = if (accent.luminance() > 0.5f) Color(0xFF0B1020) else Color(0xFFFFFFFF)
+    val containerBlend = if (dark) 0.72f else 0.9f
+    val lightAccentContainer = blend(accent, Color.White, containerBlend)
+    val onAccentContainer =
+        if (lightAccentContainer.luminance() > 0.5f) Color(0xFF0B1020) else Color(0xFFFFFFFF)
+    val lightDialogSurface = Color(0xFFFFFFFF)
     return base.copy(
         primary = accent,
         onPrimary = onAccent,
         secondary = accent,
-        onSecondary = onAccent
+        onSecondary = onAccent,
+        tertiary = accent,
+        onTertiary = onAccent,
+        primaryContainer = lightAccentContainer,
+        onPrimaryContainer = onAccentContainer,
+        secondaryContainer = lightAccentContainer,
+        onSecondaryContainer = onAccentContainer,
+        tertiaryContainer = lightAccentContainer,
+        onTertiaryContainer = onAccentContainer,
+        surfaceTint = accent,
+        surfaceContainerLowest = if (dark) base.surfaceContainerLowest else lightDialogSurface,
+        surfaceContainerLow = if (dark) base.surfaceContainerLow else lightDialogSurface,
+        surfaceContainer = if (dark) base.surfaceContainer else lightDialogSurface,
+        surfaceContainerHigh = if (dark) base.surfaceContainerHigh else lightDialogSurface,
+        surfaceContainerHighest = if (dark) base.surfaceContainerHighest else lightDialogSurface
+    )
+}
+
+private fun blend(from: Color, to: Color, amount: Float): Color {
+    val t = amount.coerceIn(0f, 1f)
+    return Color(
+        red = from.red + (to.red - from.red) * t,
+        green = from.green + (to.green - from.green) * t,
+        blue = from.blue + (to.blue - from.blue) * t,
+        alpha = from.alpha + (to.alpha - from.alpha) * t
     )
 }
 

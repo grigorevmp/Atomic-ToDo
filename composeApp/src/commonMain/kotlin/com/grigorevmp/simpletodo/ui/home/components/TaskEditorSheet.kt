@@ -7,9 +7,12 @@ import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -20,6 +23,7 @@ import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
@@ -27,7 +31,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.AlertDialogDefaults
-import androidx.compose.material3.BottomSheetDefaults
 import androidx.compose.material3.Button
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -37,10 +40,10 @@ import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -56,13 +59,19 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.luminance
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import com.grigorevmp.simpletodo.data.TodoRepository
 import com.grigorevmp.simpletodo.model.Importance
 import com.grigorevmp.simpletodo.model.Note
 import com.grigorevmp.simpletodo.model.Project
 import com.grigorevmp.simpletodo.model.ProjectStatus
+import com.grigorevmp.simpletodo.model.RecurrenceUnit
 import com.grigorevmp.simpletodo.model.Subtask
 import com.grigorevmp.simpletodo.model.Tag
 import com.grigorevmp.simpletodo.model.TodoTask
@@ -71,11 +80,11 @@ import com.grigorevmp.simpletodo.platform.isIos
 import com.grigorevmp.simpletodo.ui.components.AddIcon
 import com.grigorevmp.simpletodo.ui.components.CircleCheckbox
 import com.grigorevmp.simpletodo.ui.components.FadingScrollEdges
-import com.grigorevmp.simpletodo.ui.components.NoOverscroll
 import com.grigorevmp.simpletodo.ui.components.PlatformDeleteIcon
 import com.grigorevmp.simpletodo.ui.components.SimpleIcons
 import com.grigorevmp.simpletodo.util.newId
 import kotlinx.coroutines.launch
+import kotlinx.datetime.Instant
 import org.jetbrains.compose.resources.stringResource
 import simpletodo.composeapp.generated.resources.Res
 import simpletodo.composeapp.generated.resources.home_subtasks
@@ -92,7 +101,6 @@ import simpletodo.composeapp.generated.resources.task_deadline_label
 import simpletodo.composeapp.generated.resources.task_editor_edit
 import simpletodo.composeapp.generated.resources.task_editor_new
 import simpletodo.composeapp.generated.resources.task_estimate_label
-import simpletodo.composeapp.generated.resources.task_hide_details
 import simpletodo.composeapp.generated.resources.task_linked_note_label
 import simpletodo.composeapp.generated.resources.task_new_subtask_default
 import simpletodo.composeapp.generated.resources.task_no_note
@@ -105,15 +113,25 @@ import simpletodo.composeapp.generated.resources.task_planned_time_label
 import simpletodo.composeapp.generated.resources.task_priority_label
 import simpletodo.composeapp.generated.resources.task_project_status_title
 import simpletodo.composeapp.generated.resources.task_project_title
+import simpletodo.composeapp.generated.resources.task_repeat_enabled
+import simpletodo.composeapp.generated.resources.task_repeat_every
+import simpletodo.composeapp.generated.resources.task_repeat_interval_label
+import simpletodo.composeapp.generated.resources.task_repeat_title
+import simpletodo.composeapp.generated.resources.task_repeat_unit_day
+import simpletodo.composeapp.generated.resources.task_repeat_unit_hour
+import simpletodo.composeapp.generated.resources.task_repeat_unit_label
+import simpletodo.composeapp.generated.resources.task_repeat_unit_minute
+import simpletodo.composeapp.generated.resources.task_repeat_unit_month
+import simpletodo.composeapp.generated.resources.task_repeat_unit_week
 import simpletodo.composeapp.generated.resources.task_remove_subtask_cd
 import simpletodo.composeapp.generated.resources.task_save
 import simpletodo.composeapp.generated.resources.task_select_note
-import simpletodo.composeapp.generated.resources.task_show_details
 import simpletodo.composeapp.generated.resources.task_subtask_default
 import simpletodo.composeapp.generated.resources.task_subtask_label
 import simpletodo.composeapp.generated.resources.task_tag_label
 import simpletodo.composeapp.generated.resources.task_tag_select
 import simpletodo.composeapp.generated.resources.task_title_label
+import simpletodo.composeapp.generated.resources.home_details
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
@@ -123,6 +141,8 @@ fun TaskEditorSheet(
     projects: List<Project>,
     notes: List<Note>,
     initial: TodoTask?,
+    initialPlannedAt: Instant? = null,
+    initialDeadline: Instant? = null,
     onDismiss: () -> Unit
 ) {
     val prefs by repo.prefs.collectAsState()
@@ -133,8 +153,13 @@ fun TaskEditorSheet(
     var projectId by remember { mutableStateOf(initial?.projectId) }
     var projectStatusId by remember { mutableStateOf(initial?.projectStatusId) }
     var noteId by remember { mutableStateOf(initial?.noteId) }
-    var deadline by remember { mutableStateOf(initial?.deadline) }
-    var plannedAt by remember { mutableStateOf(initial?.plannedAt) }
+    var deadline by remember { mutableStateOf(initial?.deadline ?: initialDeadline) }
+    var plannedAt by remember { mutableStateOf(initial?.plannedAt ?: initialPlannedAt) }
+    var recurrenceEnabled by remember { mutableStateOf(initial?.recurrenceInterval != null) }
+    var recurrenceIntervalText by remember {
+        mutableStateOf(initial?.recurrenceInterval?.toString() ?: "1")
+    }
+    var recurrenceUnit by remember { mutableStateOf(initial?.recurrenceUnit ?: RecurrenceUnit.DAY) }
     var estimateHoursText by remember {
         mutableStateOf(initial?.estimateHours?.let { it.toString() } ?: "")
     }
@@ -156,7 +181,9 @@ fun TaskEditorSheet(
         stringResource(Res.string.task_editor_edit)
     }
     val iconButtonSize = if (isIos) 44.dp else 48.dp
-    val iconSize = if (isIos) 26.dp else 24.dp
+    val backIconSize = if (isIos) 30.dp else 36.dp
+    val isLightTheme = MaterialTheme.colorScheme.background.luminance() > 0.5f
+    val dialogContainerColor = if (isLightTheme) Color.White else MaterialTheme.colorScheme.surface
     val projectStatuses = remember(projectId, projects) {
         projects.firstOrNull { it.id == projectId }?.statuses.orEmpty()
     }
@@ -165,22 +192,27 @@ fun TaskEditorSheet(
         projectStatusId = null
     }
 
-    ModalBottomSheet(onDismissRequest = onDismiss) {
-        Box(
-            Modifier.fillMaxWidth().imePadding()
+    Dialog(
+        onDismissRequest = onDismiss,
+        properties = DialogProperties(usePlatformDefaultWidth = false)
+    ) {
+        Surface(
+            modifier = Modifier
+                .fillMaxWidth(0.94f)
+                .widthIn(max = 760.dp)
+                .heightIn(max = 820.dp)
+                .imePadding(),
+            shape = RoundedCornerShape(28.dp),
+            color = dialogContainerColor,
+            tonalElevation = 6.dp,
+            shadowElevation = 14.dp
         ) {
-            Column(Modifier.fillMaxSize()) {
-                NoOverscroll {
-                    Box(
-                        Modifier
-                            .fillMaxWidth()
-                            .weight(1f)
-                    ) {
-                        Column(
-                            Modifier.fillMaxWidth().verticalScroll(scrollState)
-                                .padding(18.dp),
-                            verticalArrangement = Arrangement.spacedBy(12.dp)
-                        ) {
+            Box(Modifier.fillMaxWidth()) {
+                Column(
+                    Modifier.fillMaxWidth().verticalScroll(scrollState)
+                        .padding(18.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
                             Row(
                                 Modifier.fillMaxWidth(),
                                 verticalAlignment = Alignment.CenterVertically
@@ -192,9 +224,10 @@ fun TaskEditorSheet(
                                     Icon(
                                         imageVector = SimpleIcons.ArrowLeft,
                                         contentDescription = stringResource(Res.string.task_close),
-                                        modifier = Modifier.size(iconSize)
+                                        modifier = Modifier.size(backIconSize)
                                     )
                                 }
+                                Spacer(Modifier.width(8.dp))
                                 Text(
                                     headerTitle,
                                     style = MaterialTheme.typography.titleLarge,
@@ -206,27 +239,84 @@ fun TaskEditorSheet(
                                 )
                             }
 
-                            OutlinedTextField(
-                                value = title,
-                                onValueChange = { title = it },
-                                label = { Text(stringResource(Res.string.task_title_label)) },
-                                modifier = Modifier.fillMaxWidth()
-                            )
+                            EditorSection {
+                                OutlinedTextField(
+                                    value = title,
+                                    onValueChange = { title = it },
+                                    label = { Text(stringResource(Res.string.task_title_label)) },
+                                    modifier = Modifier.fillMaxWidth()
+                                )
+                                OutlinedTextField(
+                                    value = plan,
+                                    onValueChange = { plan = it },
+                                    label = { Text(stringResource(Res.string.task_plan_label)) },
+                                    modifier = Modifier.fillMaxWidth(),
+                                    minLines = 3
+                                )
+                            }
 
-                            OutlinedTextField(
-                                value = plan,
-                                onValueChange = { plan = it },
-                                label = { Text(stringResource(Res.string.task_plan_label)) },
-                                modifier = Modifier.fillMaxWidth(),
-                                minLines = 3
-                            )
+                            EditorSection {
+                                SectionLabel(stringResource(Res.string.task_planned_time_label))
+                                PlatformDateTimePicker(
+                                    current = plannedAt,
+                                    onPicked = { plannedAt = it }
+                                )
+
+                                SectionLabel(stringResource(Res.string.task_repeat_title))
+                                FilterChip(
+                                    selected = recurrenceEnabled,
+                                    onClick = { recurrenceEnabled = !recurrenceEnabled },
+                                    label = { Text(stringResource(Res.string.task_repeat_enabled)) }
+                                )
+                                AnimatedVisibility(visible = recurrenceEnabled) {
+                                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                        Text(
+                                            text = stringResource(Res.string.task_repeat_every),
+                                            style = MaterialTheme.typography.bodyMedium,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                        Row(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                        ) {
+                                            OutlinedTextField(
+                                                value = recurrenceIntervalText,
+                                                onValueChange = { value ->
+                                                    recurrenceIntervalText = value.filter { it.isDigit() }.take(4)
+                                                },
+                                                label = { Text(stringResource(Res.string.task_repeat_interval_label)) },
+                                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                                singleLine = true,
+                                                modifier = Modifier.weight(0.45f)
+                                            )
+                                            RecurrenceUnitPicker(
+                                                current = recurrenceUnit,
+                                                onPick = { recurrenceUnit = it },
+                                                modifier = Modifier.weight(0.55f)
+                                            )
+                                        }
+                                    }
+                                }
+
+                                SectionLabel(stringResource(Res.string.task_priority_label))
+                                ImportancePicker(
+                                    current = importance,
+                                    onPick = { importance = it }
+                                )
+                            }
 
                             TextButton(
                                 onClick = { showAdvanced = !showAdvanced },
                                 modifier = Modifier.align(Alignment.CenterHorizontally)
                             ) {
+                                Icon(
+                                    imageVector = if (showAdvanced) SimpleIcons.ArrowUp else SimpleIcons.ArrowDown,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                                Spacer(Modifier.width(6.dp))
                                 Text(
-                                    text = if (showAdvanced) stringResource(Res.string.task_hide_details) else stringResource(Res.string.task_show_details),
+                                    text = stringResource(Res.string.home_details),
                                     style = MaterialTheme.typography.bodyMedium,
                                 )
                             }
@@ -236,15 +326,7 @@ fun TaskEditorSheet(
                                 enter = slideInVertically() + fadeIn(),
                                 exit = slideOutVertically() + fadeOut()
                             ) {
-                                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                                    Text(
-                                        stringResource(Res.string.task_planned_time_label),
-                                        style = MaterialTheme.typography.titleMedium
-                                    )
-
-                                    PlatformDateTimePicker(
-                                        current = plannedAt, onPicked = { plannedAt = it })
-
+                                EditorSection {
                                     OutlinedTextField(
                                         value = estimateHoursText,
                                         onValueChange = { estimateHoursText = it },
@@ -252,26 +334,17 @@ fun TaskEditorSheet(
                                         modifier = Modifier.fillMaxWidth()
                                     )
 
-                                    Spacer(modifier = Modifier.height(8.dp))
-                                    Text(stringResource(Res.string.task_deadline_label), style = MaterialTheme.typography.titleMedium)
+                                    SectionLabel(stringResource(Res.string.task_deadline_label))
                                     PlatformDateTimePicker(
                                         current = deadline, onPicked = { deadline = it })
 
-                                    Spacer(modifier = Modifier.height(8.dp))
-                                    Text(stringResource(Res.string.task_priority_label), style = MaterialTheme.typography.titleMedium)
-                                    ImportancePicker(
-                                        current = importance,
-                                        onPick = { importance = it })
-
-                                    Spacer(modifier = Modifier.height(8.dp))
-                                    Text(stringResource(Res.string.task_tag_label), style = MaterialTheme.typography.titleMedium)
+                                    SectionLabel(stringResource(Res.string.task_tag_label))
                                     TagPicker(
                                         tags = prefsTagList,
                                         currentId = tagId,
                                         onPick = { tagId = it })
 
-                                    Spacer(modifier = Modifier.height(8.dp))
-                                    Text(stringResource(Res.string.task_project_title), style = MaterialTheme.typography.titleMedium)
+                                    SectionLabel(stringResource(Res.string.task_project_title))
                                     ProjectPicker(
                                         projects = projects,
                                         currentId = projectId,
@@ -285,8 +358,7 @@ fun TaskEditorSheet(
                                         }
                                     )
                                     if (projectId != null) {
-                                        Spacer(modifier = Modifier.height(8.dp))
-                                        Text(stringResource(Res.string.task_project_status_title), style = MaterialTheme.typography.titleMedium)
+                                        SectionLabel(stringResource(Res.string.task_project_status_title))
                                         ProjectStatusPicker(
                                             statuses = projectStatuses,
                                             currentId = projectStatusId,
@@ -294,11 +366,7 @@ fun TaskEditorSheet(
                                         )
                                     }
 
-                                    Spacer(modifier = Modifier.height(8.dp))
-                                    Text(
-                                        stringResource(Res.string.task_linked_note_label),
-                                        style = MaterialTheme.typography.titleMedium
-                                    )
+                                    SectionLabel(stringResource(Res.string.task_linked_note_label))
                                     NotePicker(
                                         notes = notes,
                                         currentId = noteId,
@@ -306,8 +374,7 @@ fun TaskEditorSheet(
                                         onPick = { noteId = it }
                                     )
 
-                                    Spacer(modifier = Modifier.height(8.dp))
-                                    Text(stringResource(Res.string.home_subtasks), style = MaterialTheme.typography.titleMedium)
+                                    SectionLabel(stringResource(Res.string.home_subtasks))
                                     Column(
                                         modifier = Modifier
                                             .fillMaxWidth()
@@ -380,6 +447,11 @@ fun TaskEditorSheet(
                                             it.copy(text = cleaned)
                                         }
                                         val estimateHours = estimateHoursText.toDoubleOrNull()
+                                        val recurrenceInterval = if (recurrenceEnabled) {
+                                            recurrenceIntervalText.toIntOrNull()?.coerceAtLeast(1) ?: 1
+                                        } else {
+                                            null
+                                        }
                                         if (initial == null) {
                                             repo.addTask(
                                                 title = t,
@@ -388,6 +460,8 @@ fun TaskEditorSheet(
                                                 plannedAt = plannedAt,
                                                 estimateHours = estimateHours,
                                                 deadline = deadline,
+                                                recurrenceInterval = recurrenceInterval,
+                                                recurrenceUnit = recurrenceUnit,
                                                 importance = importance,
                                                 tagId = tagId,
                                                 subtasks = cleanedSubtasks,
@@ -403,6 +477,8 @@ fun TaskEditorSheet(
                                                     plannedAt = plannedAt,
                                                     estimateHours = estimateHours,
                                                     deadline = deadline,
+                                                    recurrenceInterval = recurrenceInterval,
+                                                    recurrenceUnit = recurrenceUnit,
                                                     importance = importance,
                                                     tagId = tagId,
                                                     projectId = projectId,
@@ -419,19 +495,90 @@ fun TaskEditorSheet(
                             }
 
                             Spacer(modifier = Modifier.height(12.dp))
-                        }
-
-                        FadingScrollEdges(
-                            scrollState = scrollState,
-                            modifier = Modifier.matchParentSize(),
-                            color = BottomSheetDefaults.ContainerColor,
-                            enabled = prefs.dimScroll
-                        )
-                    }
                 }
+
+                FadingScrollEdges(
+                    scrollState = scrollState,
+                    modifier = Modifier.matchParentSize(),
+                    color = dialogContainerColor,
+                    enabled = prefs.dimScroll
+                )
             }
         }
     }
+}
+
+@Composable
+private fun EditorSection(
+    modifier: Modifier = Modifier,
+    content: @Composable ColumnScope.() -> Unit
+) {
+    Surface(
+        modifier = modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(18.dp),
+        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.24f)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 12.dp, vertical = 10.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp),
+            content = content
+        )
+    }
+}
+
+@Composable
+private fun SectionLabel(text: String) {
+    Text(
+        text = text,
+        style = MaterialTheme.typography.titleSmall,
+        color = MaterialTheme.colorScheme.onSurface
+    )
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun RecurrenceUnitPicker(
+    current: RecurrenceUnit,
+    onPick: (RecurrenceUnit) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    var expanded by remember { mutableStateOf(false) }
+    ExposedDropdownMenuBox(
+        expanded = expanded,
+        onExpandedChange = { expanded = !expanded },
+        modifier = modifier
+    ) {
+        OutlinedTextField(
+            value = recurrenceLabel(current),
+            onValueChange = {},
+            readOnly = true,
+            label = { Text(stringResource(Res.string.task_repeat_unit_label)) },
+            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded) },
+            modifier = Modifier.fillMaxWidth().menuAnchor()
+        )
+        ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+            RecurrenceUnit.entries.forEach { unit ->
+                DropdownMenuItem(
+                    text = { Text(recurrenceLabel(unit)) },
+                    onClick = {
+                        expanded = false
+                        onPick(unit)
+                    }
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun recurrenceLabel(unit: RecurrenceUnit): String = when (unit) {
+    RecurrenceUnit.MINUTE -> stringResource(Res.string.task_repeat_unit_minute)
+    RecurrenceUnit.HOUR -> stringResource(Res.string.task_repeat_unit_hour)
+    RecurrenceUnit.DAY -> stringResource(Res.string.task_repeat_unit_day)
+    RecurrenceUnit.WEEK -> stringResource(Res.string.task_repeat_unit_week)
+    RecurrenceUnit.MONTH -> stringResource(Res.string.task_repeat_unit_month)
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -522,24 +669,18 @@ private fun ProjectStatusPicker(
 
 @Composable
 private fun ImportancePicker(current: Importance, onPick: (Importance) -> Unit) {
-    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        Importance.entries.toList().chunked(2).forEach { rowItems ->
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(10.dp)
-            ) {
-                rowItems.forEach { i ->
-                    FilterChip(
-                        selected = current == i,
-                        onClick = { onPick(i) },
-                        label = { Text(label(i)) },
-                        modifier = Modifier.weight(1f)
-                    )
-                }
-                if (rowItems.size == 1) {
-                    Spacer(modifier = Modifier.weight(1f))
-                }
-            }
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .horizontalScroll(rememberScrollState()),
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        Importance.entries.forEach { i ->
+            FilterChip(
+                selected = current == i,
+                onClick = { onPick(i) },
+                label = { Text(label(i)) }
+            )
         }
     }
 }

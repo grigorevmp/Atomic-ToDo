@@ -11,9 +11,18 @@ data class ChangelogEntry(
 
 val CHANGELOG_ENTRIES = listOf(
     ChangelogEntry(
+        version = "1.2.1",
+        title = "Полировка дизайна",
+        buildType = BuildType.BETA,
+        changes = listOf(
+            "Исправления ошибок",
+            "Изменен стиль диалогов",
+        )
+    ),
+    ChangelogEntry(
         version = "1.1.1",
         title = "Календарь и заметки",
-        buildType = BuildType.RELEASE,
+        buildType = BuildType.BETA,
         changes = listOf(
             "Исправления ошибок",
         )
@@ -21,7 +30,7 @@ val CHANGELOG_ENTRIES = listOf(
     ChangelogEntry(
         version = "1.1.0",
         title = "Календарь и заметки",
-        buildType = BuildType.RELEASE,
+        buildType = BuildType.BETA,
         changes = listOf(
             "Новый раздел проектов: список проектов, канбан по статусам и привязка задач/заметок к проектам",
             "Виджеты на Android: разные размеры, задачи на сегодня и ближайшие дни",
@@ -33,7 +42,7 @@ val CHANGELOG_ENTRIES = listOf(
     ChangelogEntry(
         version = "1.0.2",
         title = "Локализация и стабильность",
-        buildType = BuildType.BETA,
+        buildType = BuildType.ALPHA,
         changes = listOf(
             "Переводы интерфейса (RU/EN) и переключатель языка",
             "Импорт/экспорт данных и удаление всех данных",

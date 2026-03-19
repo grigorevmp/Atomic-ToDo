@@ -25,6 +25,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.grigorevmp.simpletodo.model.AppLanguage
 import com.grigorevmp.simpletodo.model.Project
 import org.jetbrains.compose.resources.stringResource
 import simpletodo.composeapp.generated.resources.Res
@@ -47,13 +48,21 @@ import simpletodo.composeapp.generated.resources.task_remove_from_project
 
 @Composable
 fun CreateProjectDialog(
+    appLanguage: AppLanguage,
     onDismiss: () -> Unit,
     onCreate: (String, List<String>) -> Unit
 ) {
-    val defaultStatuses = stringResource(Res.string.projects_statuses_default)
-        .split(',')
-        .map { it.trim() }
-        .filter { it.isNotEmpty() }
+    val localizedStatuses = stringResource(Res.string.projects_statuses_default)
+    val defaultStatuses = remember(appLanguage, localizedStatuses) {
+        when (appLanguage) {
+            AppLanguage.EN -> listOf("Todo", "Doing", "Done")
+            AppLanguage.RU -> listOf("Сделать", "В процессе", "Готово")
+            AppLanguage.SYSTEM -> localizedStatuses
+                .split(',')
+                .map { it.trim() }
+                .filter { it.isNotEmpty() }
+        }
+    }
 
     var name by remember { mutableStateOf("") }
     var newStatus by remember { mutableStateOf("") }

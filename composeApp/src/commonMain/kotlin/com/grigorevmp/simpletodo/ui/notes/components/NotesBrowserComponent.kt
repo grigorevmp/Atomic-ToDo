@@ -36,11 +36,11 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
-import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -63,6 +63,7 @@ import com.grigorevmp.simpletodo.model.TaskNoteLink
 import com.grigorevmp.simpletodo.model.TodoTask
 import com.grigorevmp.simpletodo.platform.isIos
 import com.grigorevmp.simpletodo.ui.components.AppIconId
+import com.grigorevmp.simpletodo.ui.components.EmptyIllustratedState
 import com.grigorevmp.simpletodo.ui.components.FadingScrollEdges
 import com.grigorevmp.simpletodo.ui.components.FolderIcon
 import com.grigorevmp.simpletodo.ui.components.NoteIcon
@@ -80,6 +81,7 @@ import org.jetbrains.compose.resources.ExperimentalResourceApi
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
 import simpletodo.composeapp.generated.resources.Res
+import simpletodo.composeapp.generated.resources.nav_notes
 import simpletodo.composeapp.generated.resources.nav_projects
 import simpletodo.composeapp.generated.resources.notes
 import simpletodo.composeapp.generated.resources.notes_add_folder
@@ -523,12 +525,12 @@ private fun NotesTopBar(
                     imageVector = SimpleIcons.ArrowLeft,
                     contentDescription = stringResource(Res.string.notes_back),
                     tint = LocalContentColor.current,
-                    modifier = Modifier.size(22.dp)
+                    modifier = Modifier.size(36.dp)
                 )
             }
-        } else {
-            Spacer(Modifier.width(48.dp))
+            Spacer(Modifier.width(8.dp))
         }
+
         Text(
             title,
             style = MaterialTheme.typography.titleLarge,
@@ -725,30 +727,20 @@ private fun NoteRow(
 
 @Composable
 private fun EmptyNotesState(inFolder: Boolean) {
-    Column(
-        Modifier.fillMaxSize().padding(32.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
-    ) {
-        Text(
-            if (inFolder) {
-                stringResource(Res.string.notes_empty_folder)
-            } else {
-                stringResource(Res.string.notes_empty_root)
-            },
-            style = MaterialTheme.typography.titleMedium
-        )
-        Spacer(Modifier.height(8.dp))
-        Text(
-            if (inFolder) {
-                stringResource(Res.string.notes_empty_folder_desc)
-            } else {
-                stringResource(Res.string.notes_empty_root_desc)
-            },
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-    }
+    EmptyIllustratedState(
+        title = if (inFolder) {
+            stringResource(Res.string.notes_empty_folder)
+        } else {
+            stringResource(Res.string.notes_empty_root)
+        },
+        body = if (inFolder) {
+            stringResource(Res.string.notes_empty_folder_desc)
+        } else {
+            stringResource(Res.string.notes_empty_root_desc)
+        },
+        icon = if (inFolder) null else AppIconId.Notes,
+        iconContentDescription = if (inFolder) null else stringResource(Res.string.nav_notes)
+    )
 }
 
 @Composable

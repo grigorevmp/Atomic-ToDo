@@ -106,7 +106,7 @@ fun FloatingNavBar(
     ) {
         Box(
             Modifier
-                .height(64.dp)
+                .height(48.dp)
         ) {
             Box(
                 Modifier

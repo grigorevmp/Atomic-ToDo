@@ -574,7 +574,7 @@ fun NoteEditorScreen(
                 val bottomBarHeight = if (preview) 0.dp else 96.dp
                 Column(Modifier.fillMaxSize()) {
                     val headerIconButtonSize = if (isIos) 44.dp else 48.dp
-                    val headerBackIconSize = if (isIos) 26.dp else 24.dp
+                    val headerBackIconSize = if (isIos) 30.dp else 36.dp
                     val actionIconSize: Dp = if (isIos) 24.dp else 24.dp
                     Row(
                         Modifier.fillMaxWidth().padding(horizontal = 18.dp, vertical = 6.dp),
@@ -595,6 +595,7 @@ fun NoteEditorScreen(
                                     modifier = Modifier.size(headerBackIconSize)
                                 )
                             }
+                            Spacer(Modifier.width(8.dp))
                             Text(
                                 if (initial == null) {
                                     stringResource(Res.string.note_editor_new)

@@ -20,6 +20,8 @@ import com.grigorevmp.simpletodo.ui.notes.MarkdownText
 import org.jetbrains.compose.resources.stringResource
 import simpletodo.composeapp.generated.resources.Res
 import simpletodo.composeapp.generated.resources.home_no_content
+import simpletodo.composeapp.generated.resources.task_close
+import simpletodo.composeapp.generated.resources.task_edit
 
 @Composable
 internal fun NotePreviewDialog(
@@ -59,10 +61,10 @@ internal fun NotePreviewDialog(
             }
         },
         confirmButton = {
-            TextButton(onClick = onEdit) { Text("Edit") }
+            TextButton(onClick = onEdit) { Text(stringResource(Res.string.task_edit)) }
         },
         dismissButton = {
-            TextButton(onClick = onClose) { Text("Close") }
+            TextButton(onClick = onClose) { Text(stringResource(Res.string.task_close)) }
         }
     )
 }

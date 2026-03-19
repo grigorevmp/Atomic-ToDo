@@ -74,7 +74,7 @@ private fun ChangelogCard(entry: ChangelogEntry) {
         border = BorderStroke(1.dp, accent.copy(alpha = 0.35f))
     ) {
         Box(Modifier.fillMaxWidth()) {
-            if (entry.buildType == BuildType.BETA) {
+            if (entry.buildType != BuildType.RELEASE) {
                 Icon(
                     imageVector = SimpleIcons.Beaker,
                     contentDescription = null,

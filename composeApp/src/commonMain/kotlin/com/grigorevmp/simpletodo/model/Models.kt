@@ -155,11 +155,16 @@ data class TodoTask(
     @Contextual val plannedAt: Instant? = null,
     val estimateHours: Double? = null,
     @Contextual val deadline: Instant? = null,
+    val recurrenceInterval: Int? = null,
+    val recurrenceUnit: RecurrenceUnit = RecurrenceUnit.DAY,
     val importance: Importance = Importance.NORMAL,
     val tagId: String? = null,
     val done: Boolean = false,
     val pinned: Boolean = false
 )
+
+@Serializable
+enum class RecurrenceUnit { MINUTE, HOUR, DAY, WEEK, MONTH }
 
 @Serializable
 enum class SortField { PLANNED_AT, DEADLINE, IMPORTANCE, CREATED_AT, TITLE }
@@ -198,6 +203,7 @@ data class AppPrefs(
     val noteSort: NoteSortConfig = NoteSortConfig(),
     val showTagFilters: Boolean = false,
     val showCompletedTasks: Boolean = false,
+    val inboxIntroShown: Boolean = false,
     val showCompletedProjectColumn: Boolean = true,
     val pinPinnedInNotifications: Boolean = false,
     val dimScroll: Boolean = true,

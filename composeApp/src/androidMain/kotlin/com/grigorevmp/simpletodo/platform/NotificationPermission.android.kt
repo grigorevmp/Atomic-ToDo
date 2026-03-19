@@ -28,15 +28,7 @@ import simpletodo.composeapp.generated.resources.notifications_allow_title
 @Composable
 actual fun NotificationPermissionGate(remindersEnabled: Boolean) {
     if (!remindersEnabled) return
-
-    if (Build.VERSION.SDK_INT < 33) {
-        Text(
-            stringResource(Res.string.notifications_android_legacy),
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-        return
-    }
+    if (Build.VERSION.SDK_INT < 33) return
 
     val ctx = AndroidContextHolder.appContext
     val granted = remember {

@@ -7,6 +7,7 @@ import com.grigorevmp.simpletodo.model.NoteFolder
 import com.grigorevmp.simpletodo.model.NoteSortConfig
 import com.grigorevmp.simpletodo.model.Project
 import com.grigorevmp.simpletodo.model.ProjectStatus
+import com.grigorevmp.simpletodo.model.RecurrenceUnit
 import com.grigorevmp.simpletodo.model.SortConfig
 import com.grigorevmp.simpletodo.model.SortDir
 import com.grigorevmp.simpletodo.model.SortField
@@ -27,7 +28,13 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import kotlinx.datetime.DatePeriod
 import kotlinx.datetime.Instant
+import kotlinx.datetime.LocalDateTime
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toInstant
+import kotlinx.datetime.toLocalDateTime
+import kotlinx.datetime.plus
 import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.modules.SerializersModule
@@ -169,6 +176,8 @@ class TodoRepository(
         plannedAt: kotlinx.datetime.Instant?,
         estimateHours: Double?,
         deadline: kotlinx.datetime.Instant?,
+        recurrenceInterval: Int?,
+        recurrenceUnit: RecurrenceUnit,
         importance: Importance,
         tagId: String?,
         subtasks: List<Subtask>,
@@ -195,6 +204,8 @@ class TodoRepository(
                 plannedAt = plannedAt,
                 estimateHours = estimateHours,
                 deadline = deadline,
+                recurrenceInterval = recurrenceInterval?.coerceAtLeast(1),
+                recurrenceUnit = recurrenceUnit,
                 importance = importance,
                 tagId = tagId,
                 done = false,
@@ -239,12 +250,32 @@ class TodoRepository(
 
     suspend fun toggleDone(taskId: String) {
         mutex.withLock {
-            val newList = _tasks.value.map {
-                if (it.id == taskId) it.copy(done = !it.done) else it
+            val current = _tasks.value.firstOrNull { it.id == taskId } ?: return
+            val toggledToDone = !current.done
+            val markedTask = current.copy(done = toggledToDone)
+            val recurrence = current.recurrenceInterval?.takeIf { it > 0 }
+
+            val nextRecurringTask = if (toggledToDone && recurrence != null) {
+                buildNextRecurringTask(current, recurrence, current.recurrenceUnit)
+            } else {
+                null
+            }
+
+            var newList = _tasks.value.map {
+                if (it.id == taskId) markedTask else it
+            }
+            if (nextRecurringTask != null) {
+                newList = newList + nextRecurringTask
             }
             _tasks.value = newList
             saveTasks(newList)
-            newList.firstOrNull { it.id == taskId }?.let { rescheduleIfNeeded(it) }
+            rescheduleIfNeeded(markedTask)
+            if (nextRecurringTask != null) {
+                rescheduleIfNeeded(nextRecurringTask)
+                if (nextRecurringTask.noteId != null) {
+                    addLink(taskId = nextRecurringTask.id, noteId = nextRecurringTask.noteId)
+                }
+            }
         }
     }
 
@@ -434,6 +465,14 @@ class TodoRepository(
     suspend fun setShowCompletedTasks(show: Boolean) {
         mutex.withLock {
             val p = _prefs.value.copy(showCompletedTasks = show)
+            _prefs.value = p
+            savePrefs(p)
+        }
+    }
+
+    suspend fun setInboxIntroShown(shown: Boolean) {
+        mutex.withLock {
+            val p = _prefs.value.copy(inboxIntroShown = shown)
             _prefs.value = p
             savePrefs(p)
         }
@@ -834,6 +873,55 @@ class TodoRepository(
         Importance.NORMAL -> 1
         Importance.HIGH -> 2
         Importance.CRITICAL -> 3
+    }
+
+    private fun buildNextRecurringTask(
+        source: TodoTask,
+        interval: Int,
+        unit: RecurrenceUnit
+    ): TodoTask {
+        val nextPlannedAt = source.plannedAt?.let { shiftInstant(it, interval, unit) }
+        val nextDeadline = source.deadline?.let { shiftInstant(it, interval, unit) }
+        return source.copy(
+            id = newId("task"),
+            createdAt = nowInstant(),
+            plannedAt = nextPlannedAt,
+            deadline = nextDeadline,
+            done = false,
+            pinned = false,
+            subtasks = source.subtasks.map { it.copy(done = false) }
+        )
+    }
+
+    private fun shiftInstant(instant: Instant, interval: Int, unit: RecurrenceUnit): Instant {
+        return when (unit) {
+            RecurrenceUnit.MINUTE -> Instant.fromEpochMilliseconds(
+                instant.toEpochMilliseconds() + interval * 60_000L
+            )
+            RecurrenceUnit.HOUR -> Instant.fromEpochMilliseconds(
+                instant.toEpochMilliseconds() + interval * 3_600_000L
+            )
+            RecurrenceUnit.DAY -> Instant.fromEpochMilliseconds(
+                instant.toEpochMilliseconds() + interval * 86_400_000L
+            )
+            RecurrenceUnit.WEEK -> Instant.fromEpochMilliseconds(
+                instant.toEpochMilliseconds() + interval * 7L * 86_400_000L
+            )
+            RecurrenceUnit.MONTH -> {
+                val tz = TimeZone.currentSystemDefault()
+                val current = instant.toLocalDateTime(tz)
+                val shiftedDate = current.date.plus(DatePeriod(months = interval))
+                LocalDateTime(
+                    shiftedDate.year,
+                    shiftedDate.monthNumber,
+                    shiftedDate.dayOfMonth,
+                    current.hour,
+                    current.minute,
+                    current.second,
+                    current.nanosecond
+                ).toInstant(tz)
+            }
+        }
     }
 
     private fun rescheduleIfNeeded(task: TodoTask) {

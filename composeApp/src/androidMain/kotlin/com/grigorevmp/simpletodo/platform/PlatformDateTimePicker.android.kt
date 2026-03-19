@@ -24,6 +24,12 @@ import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 import kotlinx.datetime.toInstant
 import androidx.compose.material3.ExperimentalMaterial3Api
+import org.jetbrains.compose.resources.stringResource
+import simpletodo.composeapp.generated.resources.Res
+import simpletodo.composeapp.generated.resources.date_time_clear
+import simpletodo.composeapp.generated.resources.date_time_label
+import simpletodo.composeapp.generated.resources.date_time_not_set
+import simpletodo.composeapp.generated.resources.date_time_select_time
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -35,7 +41,7 @@ actual fun PlatformDateTimePicker(
 
     val local = current?.toLocalDateTime(tz)
     val label = if (current == null) {
-        "Not set"
+        stringResource(Res.string.date_time_not_set)
     } else {
         val d = local ?: Clock.System.now().toLocalDateTime(tz)
         "${d.dayOfMonth.toString().padStart(2, '0')}." +
@@ -55,12 +61,12 @@ actual fun PlatformDateTimePicker(
                 showDateDialog = true
             },
             modifier = Modifier.weight(1f)
-        ) { Text("Date/time: $label") }
+        ) { Text(stringResource(Res.string.date_time_label, label)) }
 
         TextButton(
             onClick = { onPicked(null) },
             enabled = current != null
-        ) { Text("Clear") }
+        ) { Text(stringResource(Res.string.date_time_clear)) }
     }
 
     if (showDateDialog) {
@@ -118,7 +124,7 @@ actual fun PlatformDateTimePicker(
             dismissButton = {
                 TextButton(onClick = { showTimeDialog = false }) { Text("Cancel") }
             },
-            title = { Text("Select time") },
+            title = { Text(stringResource(Res.string.date_time_select_time)) },
             text = { TimePicker(state = timePickerState) }
         )
     }

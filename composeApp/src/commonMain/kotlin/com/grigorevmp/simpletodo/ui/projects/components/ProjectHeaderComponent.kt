@@ -2,6 +2,7 @@ package com.grigorevmp.simpletodo.ui.projects.components
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -31,6 +32,7 @@ fun SelectedProjectHeader(
     onOpenSettings: () -> Unit
 ) {
     val iconButtonSize = if (isIos) 44.dp else 48.dp
+    val backIconSize = if (isIos) 30.dp else 36.dp
     val iconSize = if (isIos) 26.dp else 24.dp
 
     Row(
@@ -48,9 +50,10 @@ fun SelectedProjectHeader(
                 Icon(
                     imageVector = SimpleIcons.ArrowLeft,
                     contentDescription = stringResource(Res.string.notes_title),
-                    modifier = Modifier.size(iconSize)
+                    modifier = Modifier.size(backIconSize)
                 )
             }
+            Spacer(Modifier.width(8.dp))
             Text(
                 projectName,
                 style = MaterialTheme.typography.titleLarge,
@@ -59,6 +62,7 @@ fun SelectedProjectHeader(
                 modifier = Modifier.width(190.dp)
             )
         }
+
         IconButton(
             onClick = onOpenSettings,
             modifier = Modifier.size(iconButtonSize)

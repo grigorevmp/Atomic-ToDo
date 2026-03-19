@@ -125,6 +125,7 @@ fun ProjectsScreen(
 
     if (showCreateDialog) {
         CreateProjectDialog(
+            appLanguage = prefs.language,
             onDismiss = { showCreateDialog = false },
             onCreate = { name, statuses ->
                 scope.launch { repo.addProject(name, statuses) }

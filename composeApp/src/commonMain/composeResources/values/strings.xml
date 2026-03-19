@@ -98,8 +98,9 @@
     <string name="settings_account_soon">Work in progress</string>
 
     <string name="settings_status_title">App status</string>
-    <string name="settings_status_desc">You are on a beta build. Update channels and telemetry are coming soon.</string>
+    <string name="settings_status_desc">You are on a beta build.</string>
     <string name="settings_status_badge_beta">Beta</string>
+    <string name="settings_status_badge_stable">Stable beta</string>
     <string name="settings_status_badge_local">Local data</string>
 
     <string name="settings_about_title">About</string>
@@ -117,6 +118,8 @@
     <string name="home_empty_timeline_body">Add a task with a deadline to see it on the timeline.</string>
     <string name="home_empty_inbox_title">Inbox is empty.</string>
     <string name="home_empty_inbox_body">Tasks without deadlines appear here.</string>
+    <string name="home_inbox_intro_title">This is Inbox</string>
+    <string name="home_inbox_intro_body">Tasks without a planned date or deadline land here and wait for sorting.</string>
     <string name="home_app_name">Atomic ToDo</string>
     <string name="home_beta_version">beta 0.7.1</string>
     <string name="home_tags_cd">Tags</string>
@@ -141,12 +144,12 @@
     <string name="home_overdue">Overdue</string>
     <string name="home_in_days">In %1$s days</string>
     <string name="home_planned_earlier">Planned earlier</string>
-    <string name="home_motivation_1">Small steps add up.</string>
-    <string name="home_motivation_2">Just do the next thing.</string>
-    <string name="home_motivation_3">Done is better than perfect.</string>
-    <string name="home_motivation_4">One task at a time.</string>
-    <string name="home_motivation_5">Make today count.</string>
-    <string name="home_motivation_6">Finish this block and move on.</string>
+    <string name="home_motivation_1">The road is mastered by the one who walks it</string>
+    <string name="home_motivation_2">Just do the next thing</string>
+    <string name="home_motivation_3">Done is better than perfect</string>
+    <string name="home_motivation_4">One task at a time</string>
+    <string name="home_motivation_5">Make today count</string>
+    <string name="home_motivation_6">Finish this block and move on</string>
     <string name="home_favorite_notes">Favorite notes</string>
     <string name="home_no_deadline">No deadline</string>
 
@@ -167,6 +170,11 @@
     <string name="task_deadline_tomorrow">Deadline in 1 day</string>
     <string name="task_deadline_in_days">Deadline in %1$s days</string>
     <string name="task_deadline_soon">Deadline soon</string>
+    <string name="date_time_not_set">Not set</string>
+    <string name="date_time_label">Date/time: %1$s</string>
+    <string name="date_time_clear">Clear</string>
+    <string name="date_time_apply">Apply</string>
+    <string name="date_time_select_time">Select time</string>
     <string name="hours_one">hour</string>
     <string name="hours_few">hours</string>
     <string name="hours_many">hours</string>
@@ -183,6 +191,16 @@
     <string name="task_planned_time_label">Planned time to do</string>
     <string name="task_estimate_label">Estimate time to complete (hours)</string>
     <string name="task_deadline_label">Deadline</string>
+    <string name="task_repeat_title">Repeats</string>
+    <string name="task_repeat_enabled">Repeat task</string>
+    <string name="task_repeat_every">Every</string>
+    <string name="task_repeat_interval_label">Interval</string>
+    <string name="task_repeat_unit_label">Unit</string>
+    <string name="task_repeat_unit_minute">Minute(s)</string>
+    <string name="task_repeat_unit_hour">Hour(s)</string>
+    <string name="task_repeat_unit_day">Day(s)</string>
+    <string name="task_repeat_unit_week">Week(s)</string>
+    <string name="task_repeat_unit_month">Month(s)</string>
     <string name="task_priority_label">Priority</string>
     <string name="task_tag_label">Tag</string>
     <string name="task_linked_note_label">Linked note</string>
@@ -295,7 +313,7 @@
     <string name="notes_favorite_add">Add to favorites</string>
     <string name="notes_favorite_remove">Remove from favorites</string>
     <string name="notes_empty_folder">Folder is empty.</string>
-    <string name="notes_empty_root">No notes yet.</string>
+    <string name="notes_empty_root">No notes yet</string>
     <string name="notes_empty_folder_desc">Create a note or a subfolder to organize your ideas.</string>
     <string name="notes_empty_root_desc">Create your first note or add folders to organize.</string>
     <string name="notes_add_folder">Add Folder</string>
@@ -309,6 +327,7 @@
     <string name="projects_title">Projects</string>
     <string name="projects_create_cd">Create project</string>
     <string name="projects_empty">Create your first project</string>
+    <string name="projects_empty_desc">Add a project to group tasks and notes.</string>
     <string name="projects_tab_all">All</string>
     <string name="projects_tab_kanban">Kanban</string>
     <string name="projects_show_completed">Show completed</string>
@@ -318,7 +337,7 @@
     <string name="projects_statuses_label">Statuses (comma separated)</string>
     <string name="projects_statuses_title">Statuses</string>
     <string name="projects_status_input">Status name</string>
-    <string name="projects_status_add">Status</string>
+    <string name="projects_status_add">Add</string>
     <string name="projects_statuses_default">Todo, Doing, Done</string>
     <string name="projects_move_task_title">Move task</string>
     <string name="projects_action_done">Done</string>

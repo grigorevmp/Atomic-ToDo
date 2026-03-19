@@ -104,6 +104,7 @@ fun CalendarTab(
     noteCount: (TodoTask) -> Int,
     onOpenNotes: (TodoTask) -> Unit,
     onMoveProject: (TodoTask) -> Unit = {},
+    onSelectedDateChange: (LocalDate) -> Unit = {},
     dimScroll: Boolean,
     backdrop: LayerBackdrop
 ) {
@@ -125,6 +126,9 @@ fun CalendarTab(
     }
     val selectedDate = remember(selectedYear, selectedMonth, selectedDay) {
         LocalDate(selectedYear, selectedMonth, selectedDay)
+    }
+    androidx.compose.runtime.LaunchedEffect(selectedDate) {
+        onSelectedDateChange(selectedDate)
     }
 
     val visibleTasks = remember(tasks, showCompleted) {
@@ -273,7 +277,7 @@ fun CalendarHeader(
     onPickYear: (Int) -> Unit
 ) {
     var yearExpanded by remember { mutableStateOf(false) }
-    val years = remember(selectedYear) { (selectedYear - 5..selectedYear + 5).toList() }
+    val years = remember { (1900..2100).toList() }
 
     Column(modifier = Modifier.fillMaxWidth()) {
         Box(modifier = Modifier.fillMaxWidth()) {

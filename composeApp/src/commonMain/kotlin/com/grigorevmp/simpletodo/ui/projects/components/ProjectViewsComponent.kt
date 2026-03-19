@@ -55,6 +55,7 @@ import com.grigorevmp.simpletodo.ui.components.FadingScrollEdges
 import com.grigorevmp.simpletodo.ui.components.PlatformIcon
 import com.grigorevmp.simpletodo.ui.home.components.TaskCard
 import com.grigorevmp.simpletodo.ui.home.components.SegmentedTabs
+import com.grigorevmp.simpletodo.ui.home.components.SegmentedTabItem
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.stringResource
 import simpletodo.composeapp.generated.resources.Res
@@ -156,8 +157,8 @@ fun SelectedProjectContent(
 
             SegmentedTabs(
                 items = listOf(
-                    stringResource(Res.string.projects_tab_all),
-                    stringResource(Res.string.projects_tab_kanban)
+                    SegmentedTabItem(label = stringResource(Res.string.projects_tab_all)),
+                    SegmentedTabItem(label = stringResource(Res.string.projects_tab_kanban))
                 ),
                 selectedIndex = if (viewMode == ProjectContentMode.ALL) 0 else 1,
                 onSelect = {

@@ -21,11 +21,15 @@ import androidx.compose.ui.interop.UIKitView
 import androidx.compose.ui.unit.dp
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.datetime.Instant
+import org.jetbrains.compose.resources.stringResource
 import platform.Foundation.NSDate
 import platform.Foundation.timeIntervalSinceDate
 import platform.UIKit.UIDatePicker
 import platform.UIKit.UIDatePickerMode
 import platform.UIKit.UIDatePickerStyle
+import simpletodo.composeapp.generated.resources.Res
+import simpletodo.composeapp.generated.resources.date_time_apply
+import simpletodo.composeapp.generated.resources.date_time_clear
 import kotlin.math.abs
 
 @OptIn(ExperimentalForeignApi::class)
@@ -82,7 +86,7 @@ actual fun PlatformDateTimePicker(
                     onPicked(picked)
                 }
             ) {
-                Text("Apply")
+                Text(stringResource(Res.string.date_time_apply))
             }
 
             TextButton(
@@ -92,7 +96,7 @@ actual fun PlatformDateTimePicker(
                 },
                 enabled = selected != null
             ) {
-                Text("Clear")
+                Text(stringResource(Res.string.date_time_clear))
             }
         }
     }

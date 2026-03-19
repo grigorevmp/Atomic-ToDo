@@ -20,6 +20,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -86,33 +87,33 @@ fun TagsCard(
         title = stringResource(Res.string.settings_tags_title),
         description = stringResource(Res.string.settings_tags_desc)
     ) {
-        Row(
+        Column (
             Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.End
+            verticalArrangement = Arrangement.spacedBy(10.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            TextButton(onClick = onManageTagsClick) {
+            Row(
+                modifier = Modifier
+                    .horizontalScroll(rememberScrollState()),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                prefs.tags.take(8).forEach { tag ->
+                    TagChip(tag = tag)
+                }
+                if (prefs.tags.size > 8) {
+                    Text(
+                        stringResource(
+                            Res.string.settings_tags_more,
+                            (prefs.tags.size - 8).toString()
+                        ),
+                        style = MaterialTheme.typography.labelLarge,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 6.dp)
+                    )
+                }
+            }
+            OutlinedButton(onClick = onManageTagsClick) {
                 Text(stringResource(Res.string.settings_tags_manage))
-            }
-        }
-        Row(
-            Modifier
-                .fillMaxWidth()
-                .horizontalScroll(rememberScrollState()),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            prefs.tags.take(8).forEach { tag ->
-                TagChip(tag = tag)
-            }
-            if (prefs.tags.size > 8) {
-                Text(
-                    stringResource(
-                        Res.string.settings_tags_more,
-                        (prefs.tags.size - 8).toString()
-                    ),
-                    style = MaterialTheme.typography.labelLarge,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 6.dp)
-                )
             }
         }
     }

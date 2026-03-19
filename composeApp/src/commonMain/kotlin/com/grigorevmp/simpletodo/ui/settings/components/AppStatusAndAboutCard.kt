@@ -32,6 +32,7 @@ import simpletodo.composeapp.generated.resources.settings_link_github
 import simpletodo.composeapp.generated.resources.settings_open
 import simpletodo.composeapp.generated.resources.settings_status_badge_beta
 import simpletodo.composeapp.generated.resources.settings_status_badge_local
+import simpletodo.composeapp.generated.resources.settings_status_badge_stable
 import simpletodo.composeapp.generated.resources.settings_status_desc
 import simpletodo.composeapp.generated.resources.settings_status_title
 import simpletodo.composeapp.generated.resources.settings_version_title
@@ -47,7 +48,7 @@ fun AppStatusAndAboutCard() {
         description = stringResource(Res.string.settings_status_desc)
     ) {
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            AccountPill(text = stringResource(Res.string.settings_status_badge_beta))
+            AccountPill(text = stringResource(Res.string.settings_status_badge_stable))
             AccountPill(text = stringResource(Res.string.settings_status_badge_local))
         }
         Surface(
